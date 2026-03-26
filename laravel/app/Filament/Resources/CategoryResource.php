@@ -1,0 +1,192 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Domains\Category\Models\Category;
+use App\Domains\Language\Models\Language;
+use App\Filament\Resources\CategoryResource\Pages\CreateCategory;
+use App\Filament\Resources\CategoryResource\Pages\EditCategory;
+use App\Filament\Resources\CategoryResource\Pages\ListCategories;
+use App\Rules\NoCircularCategoryReference;
+use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+
+class CategoryResource extends Resource
+{
+    protected static ?string $model = Category::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
+
+    protected static ?string $navigationLabel = 'Categories';
+
+    protected static ?string $navigationGroup = 'Catalog';
+
+    protected static ?int $navigationSort = 2;
+
+    public static function form(Form $form): Form
+    {
+        $languages = Language::orderBy('is_default', 'desc')->orderBy('name')->get();
+
+        // Fallback: if no languages in DB, use English by default
+        if ($languages->isEmpty()) {
+            $languages = collect([
+                (object) ['code' => 'en', 'name' => 'English'],
+            ]);
+        }
+
+        $record = $form->getRecord();
+        $categoryId = $record?->id;
+
+        return $form->schema([
+            Forms\Components\Section::make('Category Information')
+                ->schema([
+                    Forms\Components\Tabs::make('Name Translations')
+                        ->tabs(
+                            $languages->map(fn ($lang) => Forms\Components\Tabs\Tab::make($lang->name)
+                                ->schema([
+                                    Forms\Components\TextInput::make("name.{$lang->code}")
+                                        ->label("Name ({$lang->code})")
+                                        ->required($lang->code === $languages->first()->code)
+                                        ->maxLength(255)
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($lang, $languages): void {
+                                            // Only auto-generate slug from the default language
+                                            if ($lang->code !== $languages->first()->code) {
+                                                return;
+                                            }
+                                            $currentSlug = $get('slug') ?? '';
+                                            $oldStr      = is_string($old) ? $old : '';
+                                            $stateStr    = is_string($state) ? $state : '';
+                                            if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
+                                                $set('slug', Str::slug($stateStr));
+                                            }
+                                        }),
+                                ])
+                            )->all()
+                        )
+                        ->columnSpanFull(),
+
+                    Forms\Components\TextInput::make('slug')
+                        ->label('Slug')
+                        ->required()
+                        ->maxLength(255)
+                        ->unique(
+                            table: 'categories',
+                            column: 'slug',
+                            ignoreRecord: true,
+                        )
+                        ->helperText('Auto-generated from name. Must be unique.'),
+
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Parent Category')
+                        ->relationship('parent', 'name')
+                        ->getOptionLabelFromRecordUsing(
+                            fn (Category $record): string => $record->getTranslation('name', app()->getLocale()) ?: ($record->name ?? '')
+                        )
+                        ->searchable()
+                        ->nullable()
+                        ->placeholder('— None (root category) —')
+                        ->rules([
+                            new NoCircularCategoryReference($categoryId),
+                        ]),
+
+                    Forms\Components\Toggle::make('is_active')
+                        ->label('Active')
+                        ->default(true)
+                        ->inline(false),
+                ])
+                ->columns(2),
+
+            Forms\Components\Section::make('Media')
+                ->schema([
+                    SpatieMediaLibraryFileUpload::make('thumbnail')
+                        ->label('Thumbnail Image')
+                        ->collection('thumbnail')
+                        ->image()
+                        ->imageEditor()
+                        ->nullable(),
+                ]),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable(),
+
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('slug')
+                    ->label('Slug')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('parent.name')
+                    ->label('Parent Category')
+                    ->getStateUsing(fn (Category $record): ?string => $record->parent?->getTranslation('name', app()->getLocale()))
+                    ->placeholder('—')
+                    ->sortable(),
+
+                IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
+
+                TextColumn::make('created_at')
+                    ->label('Created At')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->defaultSort('id')
+            ->filters([
+                TernaryFilter::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->trueLabel('Active only')
+                    ->falseLabel('Inactive only')
+                    ->native(false),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->paginationPageOptions([10, 25, 50])
+            ->defaultPaginationPageOption(10);
+    }
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index'  => ListCategories::route('/'),
+            'create' => CreateCategory::route('/create'),
+            'edit'   => EditCategory::route('/{record}/edit'),
+        ];
+    }
+}
+
