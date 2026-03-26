@@ -19,7 +19,7 @@ class OrderFactory extends Factory
             'customer_id'   => fn () => Customer::factory(),
             'status'        => fake()->randomElement(['pending', 'processing', 'shipped', 'completed', 'cancelled']),
             'total_amount'  => fake()->randomFloat(2, 10, 2000),
-            'currency_code' => fake()->currencyCode(),
+            'currency_code' => fake()->randomElement(['USD', 'EUR', 'GBP']),
             'exchange_rate' => fake()->randomFloat(6, 0.5, 2.0),
         ];
     }

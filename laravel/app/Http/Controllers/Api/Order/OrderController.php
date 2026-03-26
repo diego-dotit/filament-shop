@@ -79,9 +79,9 @@ class OrderController extends Controller
             ->orderByDesc('created_at')
             ->paginate();
 
-        return response()->json(
-            OrderResource::collection($orders)->response()->getData(true)
-        );
+        $data = OrderResource::collection($orders)->response()->getData(true);
+
+        return ApiResponse::success($data['data'], extra: ['links' => $data['links'], 'meta' => $data['meta']]);
     }
 
     /**
@@ -93,7 +93,7 @@ class OrderController extends Controller
         $customer = $request->user()->customer;
 
         if ($order->customer_id !== $customer->id) {
-            abort(403, 'You do not have access to this order.');
+            return ApiResponse::error('forbidden', 'You do not have access to this order.', 403);
         }
 
         $order->load(['items', 'addresses']);

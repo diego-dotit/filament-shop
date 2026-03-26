@@ -22,9 +22,9 @@ class AddressController extends Controller
         $customer  = $request->user()->customer;
         $addresses = $customer->addresses()->paginate();
 
-        return response()->json(
-            CustomerAddressResource::collection($addresses)->response()->getData(true)
-        );
+        $data = CustomerAddressResource::collection($addresses)->response()->getData(true);
+
+        return ApiResponse::success($data['data'], extra: ['links' => $data['links'], 'meta' => $data['meta']]);
     }
 
     /**
@@ -48,7 +48,7 @@ class AddressController extends Controller
         $customer = $request->user()->customer;
 
         if ($customer->id !== $address->customer_id) {
-            abort(403);
+            return ApiResponse::error('forbidden', 'Forbidden.', 403);
         }
 
         $address->update($request->validated());
@@ -65,7 +65,7 @@ class AddressController extends Controller
         $customer = $request->user()->customer;
 
         if ($customer->id !== $address->customer_id) {
-            abort(403);
+            return ApiResponse::error('forbidden', 'Forbidden.', 403);
         }
 
         $address->delete();

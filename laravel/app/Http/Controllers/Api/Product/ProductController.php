@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api\Product;
 use App\Domains\Product\Models\Product;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Product\ProductResource;
+use App\Http\Responses\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProductController extends Controller
 {
@@ -15,7 +16,7 @@ class ProductController extends Controller
      *
      * Returns a paginated list of active products.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->input('per_page', 15);
 
@@ -29,7 +30,9 @@ class ProductController extends Controller
             ])
             ->paginate($perPage);
 
-        return ProductResource::collection($products);
+        $data = ProductResource::collection($products)->response()->getData(true);
+
+        return ApiResponse::success($data['data'], extra: ['links' => $data['links'], 'meta' => $data['meta']]);
     }
 
     /**

@@ -9,8 +9,8 @@ use App\Http\Requests\Api\Review\StoreReviewRequest;
 use App\Http\Resources\Api\Review\ReviewResource;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ReviewController extends Controller
 {
@@ -20,7 +20,7 @@ class ReviewController extends Controller
      * Returns a paginated list of approved reviews for the given product.
      * Public endpoint — no authentication required.
      */
-    public function index(Request $request, int $productId): AnonymousResourceCollection
+    public function index(Request $request, int $productId): JsonResponse
     {
         $product = Product::findOrFail($productId);
 
@@ -32,7 +32,9 @@ class ReviewController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        return ReviewResource::collection($reviews);
+        $data = ReviewResource::collection($reviews)->response()->getData(true);
+
+        return ApiResponse::success($data['data'], extra: ['links' => $data['links'], 'meta' => $data['meta']]);
     }
 
     /**
