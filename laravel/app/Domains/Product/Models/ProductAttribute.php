@@ -10,7 +10,7 @@ class ProductAttribute extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['value'];
+    protected $fillable = ['product_id', 'attribute_id', 'value'];
 
     public function product(): BelongsTo
     {

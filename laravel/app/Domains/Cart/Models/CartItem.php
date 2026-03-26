@@ -17,7 +17,7 @@ class CartItem extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['product_id', 'product_variant_id', 'quantity'];
+    protected $fillable = ['cart_id', 'product_id', 'product_variant_id', 'quantity'];
 
     /**
      * Get the attributes that should be cast.
