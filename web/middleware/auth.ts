@@ -6,9 +6,9 @@
 // destination preserved as a `redirect` query parameter.
 
 export default defineNuxtRouteMiddleware((to) => {
-  const { isAuthenticated } = useAuth()
+    const { isAuthenticated } = useAuth();
 
-  if (!isAuthenticated.value) {
-    return navigateTo(`/login?redirect=${to.path}`)
-  }
-})
+    if (!isAuthenticated.value) {
+        return navigateTo(`/login?redirect=${to.path}`);
+    }
+});

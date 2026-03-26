@@ -8,7 +8,6 @@ import { ref, computed } from "vue";
 
 vi.stubGlobal("computed", computed);
 
-// useNuxtApp: throw so composable falls back gracefully
 vi.stubGlobal("useNuxtApp", () => {
     throw new Error("outside Nuxt context");
 });
@@ -17,17 +16,13 @@ vi.stubGlobal("useRuntimeConfig", () => ({
     public: { apiBaseUrl: "http://localhost:8000" },
 }));
 
-// useState: simulate Nuxt's shared state via a plain ref per key
 vi.stubGlobal("useState", <T>(_key: string, init: () => T) => ref<T>(init()));
 
-// useApi: return a no-op fetch stub (overridden per-test via useAuth stub)
 vi.stubGlobal("useApi", () => vi.fn());
 
-// navigateTo: stub for redirect assertions
 const mockNavigateTo = vi.fn();
 vi.stubGlobal("navigateTo", mockNavigateTo);
 
-// definePageMeta: no-op in test env
 vi.stubGlobal("definePageMeta", vi.fn());
 
 // ---------------------------------------------------------------------------
@@ -55,20 +50,19 @@ const mockCustomer = {
 // Helper: build a useAuth stub
 // ---------------------------------------------------------------------------
 
-function makeAuthStub(userValue: typeof mockCustomer | null = mockCustomer, apiMock = vi.fn()) {
+function makeAuthStub(userValue: typeof mockCustomer | null = mockCustomer, _apiMock = vi.fn()) {
     return () => ({
         user: ref(userValue),
         isAuthenticated: computed(() => userValue !== null),
         logout: vi.fn(),
-        _api: apiMock,
     });
 }
 
 // ---------------------------------------------------------------------------
-// Tests: Account Dashboard page
+// Tests: Account Edit page
 // ---------------------------------------------------------------------------
 
-describe("Account Dashboard page", () => {
+describe("Account Edit page", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockNavigateTo.mockReset();
@@ -80,56 +74,28 @@ describe("Account Dashboard page", () => {
     it("redirects to /login when user is not authenticated", async () => {
         vi.stubGlobal("useAuth", makeAuthStub(null));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        mount(Dashboard, { global: { stubs: globalStubs } });
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        mount(EditPage, { global: { stubs: globalStubs } });
 
         expect(mockNavigateTo).toHaveBeenCalledWith("/login");
     });
 
-    // ── Profile display ────────────────────────────────────────────────────────
+    // ── Form rendering ─────────────────────────────────────────────────────────
 
-    it("displays customer profile: first name, last name, email, phone", async () => {
+    it("renders the edit form on mount", async () => {
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
-
-        expect(wrapper.text()).toContain("Alice");
-        expect(wrapper.text()).toContain("Smith");
-        expect(wrapper.text()).toContain("alice@example.com");
-        expect(wrapper.text()).toContain("+1-555-0100");
-    });
-
-    it("does not show the edit form when in display mode", async () => {
-        vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
-
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
-
-        // Form should be hidden, no submit button visible
-        expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(false);
-    });
-
-    // ── Edit mode ──────────────────────────────────────────────────────────────
-
-    it("shows edit form when Edit button is clicked", async () => {
-        vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
-
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
-
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
         expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(true);
     });
 
-    it("pre-fills edit form fields with current user values", async () => {
+    it("pre-fills form fields with current user data on mount", async () => {
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
-
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
         expect(
             (wrapper.find('[data-testid="input-first-name"]').element as HTMLInputElement).value
@@ -145,43 +111,56 @@ describe("Account Dashboard page", () => {
         ).toBe("+1-555-0100");
     });
 
-    it("cancel button closes edit form without saving", async () => {
+    it("shows empty inputs when user fields are null/missing", async () => {
+        const partialUser = { id: 2, name: "Bob", email: "bob@example.com" };
+        vi.stubGlobal("useAuth", makeAuthStub(partialUser as typeof mockCustomer));
+
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
+
+        expect(
+            (wrapper.find('[data-testid="input-first-name"]').element as HTMLInputElement).value
+        ).toBe("");
+        expect(
+            (wrapper.find('[data-testid="input-last-name"]').element as HTMLInputElement).value
+        ).toBe("");
+        expect(
+            (wrapper.find('[data-testid="input-email"]').element as HTMLInputElement).value
+        ).toBe("bob@example.com");
+        expect(
+            (wrapper.find('[data-testid="input-phone"]').element as HTMLInputElement).value
+        ).toBe("");
+    });
+
+    // ── Cancel button ──────────────────────────────────────────────────────────
+
+    it("cancel button navigates to /account/dashboard", async () => {
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
-        // Open edit form
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
-        expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(true);
-
-        // Cancel
         await wrapper.find('[data-testid="cancel-btn"]').trigger("click");
-        expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(false);
+
+        expect(mockNavigateTo).toHaveBeenCalledWith("/account/dashboard");
     });
 
     // ── Submit / API call ──────────────────────────────────────────────────────
 
     it("submit calls PUT /customers/me with updated form values", async () => {
         const mockApi = vi.fn().mockResolvedValueOnce({
-            data: { ...mockCustomer, first_name: "Alicia", last_name: "Smith" },
+            data: { ...mockCustomer, first_name: "Alicia" },
         });
         vi.stubGlobal("useApi", () => mockApi);
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
-        // Open edit form
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
-
-        // Change first name
         const firstNameInput = wrapper.find('[data-testid="input-first-name"]');
         await firstNameInput.setValue("Alicia");
 
-        // Submit
         await wrapper.find('[data-testid="edit-form"]').trigger("submit");
-        // Allow async ops to settle
         await wrapper.vm.$nextTick();
 
         expect(mockApi).toHaveBeenCalledWith(
@@ -204,10 +183,9 @@ describe("Account Dashboard page", () => {
         vi.stubGlobal("useApi", () => mockApi);
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
         await wrapper.find('[data-testid="edit-form"]').trigger("submit");
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
@@ -223,14 +201,33 @@ describe("Account Dashboard page", () => {
         vi.stubGlobal("useApi", () => mockApi);
         vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
 
-        const { default: Dashboard } = await import("../pages/account/dashboard.vue");
-        const wrapper = mount(Dashboard, { global: { stubs: globalStubs } });
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
 
-        await wrapper.find('[data-testid="edit-btn"]').trigger("click");
         await wrapper.find('[data-testid="edit-form"]').trigger("submit");
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
         expect(wrapper.find('[data-testid="error-msg"]').exists()).toBe(true);
+        expect(wrapper.find('[data-testid="error-msg"]').text()).toContain(
+            "The email has already been taken."
+        );
+    });
+
+    it("displays generic error message on non-validation API failure", async () => {
+        const apiError = { data: { message: "Server error" } };
+        const mockApi = vi.fn().mockRejectedValueOnce(apiError);
+        vi.stubGlobal("useApi", () => mockApi);
+        vi.stubGlobal("useAuth", makeAuthStub(mockCustomer));
+
+        const { default: EditPage } = await import("../pages/account/edit.vue");
+        const wrapper = mount(EditPage, { global: { stubs: globalStubs } });
+
+        await wrapper.find('[data-testid="edit-form"]').trigger("submit");
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.find('[data-testid="error-msg"]').exists()).toBe(true);
+        expect(wrapper.find('[data-testid="error-msg"]').text()).toContain("Server error");
     });
 });

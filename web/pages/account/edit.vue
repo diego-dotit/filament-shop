@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from "vue";
+import { ref, reactive, watch } from "vue";
 
 // Protect this route — unauthenticated visitors are redirected by the middleware.
 definePageMeta({ middleware: "auth" });
@@ -21,40 +21,23 @@ watch(isAuthenticated, (authenticated) => {
     }
 });
 
-// ── Edit mode state ─────────────────────────────────────────────────────────
+// ── Form state ───────────────────────────────────────────────────────────────
 
-// Typed accessor for user fields not typed in useAuth
-const userRecord = computed(() => user.value as Record<string, unknown>);
-
-const isEditing = ref(false);
 const successMessage = ref<string | null>(null);
 const errorMessage = ref<string | null>(null);
 
-// Form values (populated when edit mode opens)
+// Pre-fill form from current user on mount
 const form = reactive({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
+    first_name: ((user.value as Record<string, unknown>)?.first_name as string) ?? "",
+    last_name: ((user.value as Record<string, unknown>)?.last_name as string) ?? "",
+    email: user.value?.email ?? "",
+    phone: ((user.value as Record<string, unknown>)?.phone as string) ?? "",
 });
 
 // ── Actions ─────────────────────────────────────────────────────────────────
 
-function openEdit(): void {
-    // Pre-fill from current user
-    form.first_name = ((user.value as Record<string, unknown>)?.first_name as string) ?? "";
-    form.last_name = ((user.value as Record<string, unknown>)?.last_name as string) ?? "";
-    form.email = user.value?.email ?? "";
-    form.phone = ((user.value as Record<string, unknown>)?.phone as string) ?? "";
-    successMessage.value = null;
-    errorMessage.value = null;
-    isEditing.value = true;
-}
-
-function cancelEdit(): void {
-    isEditing.value = false;
-    successMessage.value = null;
-    errorMessage.value = null;
+function cancel(): void {
+    navigateTo("/account/dashboard");
 }
 
 async function submitEdit(): Promise<void> {
@@ -76,7 +59,6 @@ async function submitEdit(): Promise<void> {
             Object.assign(user.value, response.data);
         }
 
-        isEditing.value = false;
         successMessage.value = "Profile updated successfully.";
     } catch (err: unknown) {
         const error = err as {
@@ -95,8 +77,8 @@ async function submitEdit(): Promise<void> {
 </script>
 
 <template>
-    <div class="account-dashboard">
-        <h1>Account Dashboard</h1>
+    <div class="account-edit">
+        <h1>Edit Profile</h1>
 
         <!-- Success message -->
         <p v-if="successMessage" data-testid="success-msg" class="success-message">
@@ -108,31 +90,8 @@ async function submitEdit(): Promise<void> {
             {{ errorMessage }}
         </p>
 
-        <!-- Profile display (read-only) -->
-        <section v-if="!isEditing && user" class="profile-display">
-            <h2>My Profile</h2>
-
-            <dl>
-                <dt>First Name</dt>
-                <dd data-testid="display-first-name">{{ userRecord.first_name }}</dd>
-
-                <dt>Last Name</dt>
-                <dd data-testid="display-last-name">{{ userRecord.last_name }}</dd>
-
-                <dt>Email</dt>
-                <dd data-testid="display-email">{{ user.email }}</dd>
-
-                <dt>Phone</dt>
-                <dd data-testid="display-phone">{{ userRecord.phone }}</dd>
-            </dl>
-
-            <button data-testid="edit-btn" type="button" @click="openEdit">Edit</button>
-        </section>
-
         <!-- Edit form -->
-        <form v-if="isEditing" data-testid="edit-form" @submit.prevent="submitEdit">
-            <h2>Edit Profile</h2>
-
+        <form data-testid="edit-form" @submit.prevent="submitEdit">
             <div>
                 <label for="first-name">First Name</label>
                 <input
@@ -183,7 +142,7 @@ async function submitEdit(): Promise<void> {
 
             <div class="form-actions">
                 <button type="submit">Save</button>
-                <button data-testid="cancel-btn" type="button" @click="cancelEdit">Cancel</button>
+                <button data-testid="cancel-btn" type="button" @click="cancel">Cancel</button>
             </div>
         </form>
     </div>
