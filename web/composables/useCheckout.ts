@@ -15,12 +15,11 @@
 
 export interface CustomerAddress {
   id: number
-  street: string
-  city: string
-  state: string
-  zip: string
   country: string
-  phone: string
+  city: string
+  address_line_1: string
+  address_line_2?: string
+  postcode: string
 }
 
 export interface OrderConfirmation {

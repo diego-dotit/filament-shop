@@ -64,7 +64,11 @@
         <!-- Selected Variant Info -->
         <div v-if="selectedVariant" class="product-detail__variant-info">
           <p class="product-detail__price">
-            Price: <strong>${{ selectedVariant.price }}</strong>
+            Price: <strong v-if="selectedVariant.special_price">${{ selectedVariant.special_price }}</strong>
+            <strong v-else>${{ selectedVariant.regular_price }}</strong>
+            <span v-if="selectedVariant.special_price" class="product-detail__regular-price">
+              <s>${{ selectedVariant.regular_price }}</s>
+            </span>
           </p>
           <p class="product-detail__stock" :class="{ 'out-of-stock': isOutOfStock }">
             <span v-if="isOutOfStock">Out of stock</span>
@@ -164,7 +168,8 @@ interface ReviewResource {
 interface ProductVariantWithStock {
   id: number
   sku: string
-  price: string
+  regular_price: string
+  special_price?: string
   stock_quantity: number
   attributes: Record<string, string>
 }
@@ -223,7 +228,12 @@ const isOutOfStock = computed<boolean>(() => {
 })
 
 const canAddToCart = computed<boolean>(() => {
-  return selectedVariantId.value !== '' && !isOutOfStock.value && quantity.value >= 1
+  return (
+    selectedVariantId.value !== '' &&
+    !isOutOfStock.value &&
+    quantity.value >= 1 &&
+    quantity.value <= (selectedVariant.value?.stock_quantity ?? 0)
+  )
 })
 
 const hasUserReviewed = computed<boolean>(() => {
@@ -252,10 +262,19 @@ async function handleAddToCart() {
   cartError.value = null
 
   try {
-    await addItem(selectedVariantId.value as number, quantity.value)
+    await addItem(
+      selectedVariantId.value as number,
+      quantity.value,
+      product.value ? {
+        product: { id: product.value.id, name: product.value.name, slug: product.value.slug },
+        variant: { id: selectedVariant.value!.id, sku: selectedVariant.value!.sku },
+        price: parseFloat(selectedVariant.value!.special_price ?? selectedVariant.value!.regular_price),
+      } : undefined,
+    )
     cartSuccess.value = true
-  } catch {
-    cartError.value = 'Failed to add item to cart. Please try again.'
+  } catch (err: unknown) {
+    const apiErr = err as { data?: { message?: string }; message?: string } | null
+    cartError.value = apiErr?.data?.message ?? apiErr?.message ?? 'Failed to add item to cart. Please try again.'
   } finally {
     addingToCart.value = false
   }

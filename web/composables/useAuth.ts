@@ -119,7 +119,7 @@ export function useAuth() {
   }
 
   /**
-   * Log out: clears token from localStorage and resets reactive state.
+   * Log out: clears token from localStorage, resets reactive state, and clears the cart.
    */
   function logout(): void {
     if (typeof window !== 'undefined') {
@@ -127,6 +127,9 @@ export function useAuth() {
     }
     token.value = null
     user.value = null
+    // Clear the cart state on logout
+    const { clearCart } = useCart()
+    clearCart()
   }
 
   /**
@@ -164,9 +167,9 @@ export function useAuth() {
     }
   }
 
-  // Automatically restore the session on composable initialisation.
-  // The returned promise lets callers (and tests) await completion.
-  const _initPromise = restoreSession()
+  // Session is restored via plugins/auth.client.ts before route middleware runs.
+  // Keeping _initPromise in the return value for backward-compatibility with tests.
+  const _initPromise = Promise.resolve()
 
   return {
     user,

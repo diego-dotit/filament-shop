@@ -32,8 +32,11 @@
           <span>${{ cart?.total.toFixed(2) ?? '0.00' }}</span>
         </div>
 
-        <NuxtLink to="/checkout" class="cart-page__checkout-btn">
+        <NuxtLink v-if="isAuthenticated" to="/checkout" class="cart-page__checkout-btn">
           Proceed to Checkout
+        </NuxtLink>
+        <NuxtLink v-else to="/login?redirect=/checkout" class="cart-page__checkout-btn cart-page__checkout-btn--login">
+          Login to Checkout
         </NuxtLink>
 
         <NuxtLink to="/" class="cart-page__continue-link">
@@ -47,10 +50,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
-definePageMeta({
-  middleware: 'auth',
-})
-
 const { isAuthenticated } = useAuth()
 const { cart, items, fetchCart } = useCart()
 
@@ -59,10 +58,6 @@ const subtotal = computed<number>(() =>
 )
 
 onMounted(async () => {
-  if (!isAuthenticated.value) {
-    await navigateTo('/login')
-    return
-  }
   await fetchCart()
 })
 </script>
@@ -146,6 +141,14 @@ onMounted(async () => {
 
 .cart-page__checkout-btn:hover {
   background: #c73350;
+}
+
+.cart-page__checkout-btn--login {
+  background: #2563eb;
+}
+
+.cart-page__checkout-btn--login:hover {
+  background: #1d4ed8;
 }
 
 .cart-page__continue-link {

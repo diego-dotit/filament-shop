@@ -19,7 +19,7 @@
       <!-- No addresses -->
       <div v-else-if="addresses.length === 0" class="no-addresses">
         <p>No saved addresses found. Please add an address to continue.</p>
-        <NuxtLink to="/account/addresses/new" class="btn btn-primary">
+        <NuxtLink :to="'/account/addresses/new?redirect=/checkout'" class="btn btn-primary">
           Add Address
         </NuxtLink>
       </div>
@@ -44,8 +44,8 @@
                 @change="selectBillingAddress(address.id)"
               />
               <span>
-                {{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.zip }},
-                {{ address.country }}
+                {{ address.address_line_1 }}<span v-if="address.address_line_2">, {{ address.address_line_2 }}</span>,
+                {{ address.city }}, {{ address.postcode }}, {{ address.country }}
               </span>
             </label>
           </div>
@@ -69,8 +69,8 @@
                 @change="selectShippingAddress(address.id)"
               />
               <span>
-                {{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.zip }},
-                {{ address.country }}
+                {{ address.address_line_1 }}<span v-if="address.address_line_2">, {{ address.address_line_2 }}</span>,
+                {{ address.city }}, {{ address.postcode }}, {{ address.country }}
               </span>
             </label>
           </div>
