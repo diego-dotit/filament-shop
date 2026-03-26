@@ -1,1 +1,2 @@
 - language slugs
+- tailwind pe /web
