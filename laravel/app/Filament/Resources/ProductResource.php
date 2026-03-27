@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Domains\Category\Models\Category;
 use App\Domains\Language\Models\Language;
 use App\Domains\Product\Models\Product;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use App\Filament\Resources\Product\Pages\CreateProduct;
 use App\Filament\Resources\Product\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages\ListProducts;
@@ -172,6 +173,28 @@ class ProductResource extends Resource
                         ->reorderable(false)
                         ->collapsible()
                         ->defaultItems(0),
+                ]),
+
+            Forms\Components\Section::make('Featured Image')
+                ->schema([
+                    SpatieMediaLibraryFileUpload::make('thumbnail')
+                        ->label('Featured Image')
+                        ->collection('thumbnail')
+                        ->image()
+                        ->imageEditor()
+                        ->nullable(),
+                ]),
+
+            Forms\Components\Section::make('Image Gallery')
+                ->schema([
+                    SpatieMediaLibraryFileUpload::make('images')
+                        ->label('Gallery Images')
+                        ->collection('images')
+                        ->image()
+                        ->multiple()
+                        ->reorderable()
+                        ->maxFiles(10)
+                        ->nullable(),
                 ]),
         ]);
     }

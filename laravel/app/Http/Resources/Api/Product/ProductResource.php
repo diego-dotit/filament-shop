@@ -26,6 +26,7 @@ class ProductResource extends JsonResource
             'name'               => $this->getTranslation('name', $lang),
             'description'        => $this->getTranslation('description', $lang),
             'is_active'          => $this->is_active,
+            'price'              => $this->resolveLowestPrice(),
             'variants'           => ProductVariantResource::collection(
                 $this->resource->relationLoaded('variants')
                     ? $this->variants
@@ -59,18 +60,33 @@ class ProductResource extends JsonResource
         return app()->getLocale();
     }
 
-    private function resolveImages(): ?string
+    private function resolveLowestPrice(): ?string
     {
-        if (method_exists($this->resource, 'getFirstMediaUrl')) {
+        if (! $this->resource->relationLoaded('variants')) {
+            return null;
+        }
+
+        $lowest = $this->variants
+            ->where('is_active', true)
+            ->min('regular_price');
+
+        return $lowest !== null ? (string) $lowest : null;
+    }
+
+    private function resolveImages(): array
+    {
+        if (method_exists($this->resource, 'getMedia')) {
             try {
-                $url = $this->resource->getFirstMediaUrl();
-                return $url ?: null;
+                return $this->resource->getMedia('images')
+                    ->map(fn ($media) => $media->getUrl())
+                    ->values()
+                    ->toArray();
             } catch (\Throwable) {
-                return null;
+                return [];
             }
         }
 
-        return null;
+        return [];
     }
 
     private function resolveProductAttributes(Request $request): array

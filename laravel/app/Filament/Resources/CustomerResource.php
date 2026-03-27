@@ -75,21 +75,6 @@ class CustomerResource extends Resource
                             ->dateTime(),
                     ])
                     ->columns(2),
-
-                Infolists\Components\Section::make('Addresses')
-                    ->schema([
-                        Infolists\Components\RepeatableEntry::make('addresses')
-                            ->schema([
-                                Infolists\Components\TextEntry::make('id')
-                                    ->label('ID'),
-                                Infolists\Components\TextEntry::make('country'),
-                                Infolists\Components\TextEntry::make('city'),
-                                Infolists\Components\TextEntry::make('address_line_1')
-                                    ->label('Address'),
-                                Infolists\Components\TextEntry::make('postcode'),
-                            ])
-                            ->columns(5),
-                    ]),
             ]);
     }
 

@@ -67,7 +67,7 @@ export function useOrders() {
         error.value = null;
 
         try {
-            const response = await api<{ data: OrderSummary[] }>("/customers/me/orders");
+            const response = await api<{ data: OrderSummary[] }>("/orders");
             orders.value = response.data;
         } catch {
             error.value = "Failed to load orders";
@@ -85,7 +85,7 @@ export function useOrders() {
         error.value = null;
 
         try {
-            const response = await api<{ data: Order }>(`/customers/me/orders/${id}`);
+            const response = await api<{ data: Order }>(`/orders/${id}`);
             currentOrder.value = response.data;
         } catch {
             error.value = "Failed to load order";

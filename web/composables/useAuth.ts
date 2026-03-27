@@ -146,10 +146,10 @@ export function useAuth() {
 
         try {
             // Validate first — do not expose the token via reactive state until confirmed valid
-            const me = await api<Customer>("/auth/me");
+            const me = await api<{ success: boolean; data: Customer }>("/auth/me");
             // Only set reactive state after successful validation
             token.value = storedToken;
-            user.value = me;
+            user.value = me.data;
         } catch (error: unknown) {
             const err = error as {
                 status?: number;

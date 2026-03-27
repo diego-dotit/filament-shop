@@ -215,6 +215,47 @@ class ProductTest extends TestCase
         $this->assertEquals('VAR-001', $variants[0]['sku']);
     }
 
+    // ── Images array in API response ─────────────────────────────────────────
+
+    public function test_product_detail_images_returns_empty_array_when_no_media(): void
+    {
+        $this->createLanguage('en', true);
+        $this->createCurrency('USD', 1.0, true);
+
+        $this->createProduct(['slug' => 'product-no-images']);
+
+        $response = $this->getJson('/api/products/product-no-images');
+
+        $response->assertStatus(200);
+        $this->assertIsArray($response->json('data.images'), 'images must be an array');
+        $this->assertSame([], $response->json('data.images'), 'images must be empty array when no media');
+    }
+
+    public function test_product_detail_images_returns_array_of_urls_when_media_exists(): void
+    {
+        $this->createLanguage('en', true);
+        $this->createCurrency('USD', 1.0, true);
+
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $product = $this->createProduct(['slug' => 'product-with-images']);
+        $image1  = \Illuminate\Http\UploadedFile::fake()->image('photo1.jpg');
+        $image2  = \Illuminate\Http\UploadedFile::fake()->image('photo2.jpg');
+        $product->addMedia($image1)->toMediaCollection('images');
+        $product->addMedia($image2)->toMediaCollection('images');
+
+        $response = $this->getJson('/api/products/product-with-images');
+
+        $response->assertStatus(200);
+        $images = $response->json('data.images');
+        $this->assertIsArray($images, 'images must be an array');
+        $this->assertCount(2, $images, 'images must contain all media items');
+        foreach ($images as $url) {
+            $this->assertIsString($url, 'each image entry must be a URL string');
+            $this->assertNotEmpty($url, 'each image URL must not be empty');
+        }
+    }
+
     // ── Accept-Language header ────────────────────────────────────────────────
 
     public function test_product_listing_respects_accept_language_header(): void

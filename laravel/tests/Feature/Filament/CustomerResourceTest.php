@@ -8,7 +8,10 @@ use App\Filament\Resources\CustomerResource;
 use App\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use App\Filament\Resources\CustomerResource\Pages\ListCustomers;
 use App\Filament\Resources\CustomerResource\Pages\ViewCustomer;
+use App\Filament\Resources\CustomerResource\RelationManagers\AddressesRelationManager;
 use App\Models\User;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Infolist;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -277,7 +280,7 @@ class CustomerResourceTest extends TestCase
         $this->actingAs($this->adminUser);
 
         $customer = Customer::factory()->create();
-        $address  = CustomerAddress::factory()->create([
+        CustomerAddress::factory()->create([
             'customer_id'    => $customer->id,
             'city'           => 'TestCity',
             'country'        => 'TestCountry',
@@ -285,10 +288,64 @@ class CustomerResourceTest extends TestCase
             'postcode'       => 'TC123',
         ]);
 
+        // Address data is managed via AddressesRelationManager (a separate tab),
+        // not via a RepeatableEntry in the infolist. Verify the view page loads
+        // without errors and that the customer profile data is visible.
         Livewire::test(ViewCustomer::class, ['record' => $customer->getRouteKey()])
-            ->assertSee('TestCity')
-            ->assertSee('TestCountry')
-            ->assertSee('123 Test St')
-            ->assertSee('TC123');
+            ->assertSuccessful()
+            ->assertSee($customer->first_name)
+            ->assertSee($customer->email);
+    }
+
+    // -----------------------------------------------------------------------
+    // Infolist schema tests
+    // -----------------------------------------------------------------------
+
+    public function test_customer_infolist_does_not_contain_addresses_repeatable_entry(): void
+    {
+        $infolist = Infolist::make()->state([]);
+
+        CustomerResource::infolist($infolist);
+
+        $flatComponents = $infolist->getFlatComponents(withHidden: true);
+
+        $addressesRepeatable = array_filter(
+            $flatComponents,
+            fn ($component) => $component instanceof RepeatableEntry
+                && $component->getName() === 'addresses',
+        );
+
+        $this->assertEmpty(
+            $addressesRepeatable,
+            'CustomerResource infolist should not contain a RepeatableEntry for addresses — use AddressesRelationManager instead.',
+        );
+    }
+
+    public function test_customer_infolist_contains_customer_profile_section(): void
+    {
+        $infolist = Infolist::make()->state([]);
+
+        CustomerResource::infolist($infolist);
+
+        $flatComponents = $infolist->getFlatComponents(withHidden: true);
+
+        $textEntryNames = array_map(
+            fn ($c) => $c->getName(),
+            array_filter($flatComponents, fn ($c) => $c instanceof \Filament\Infolists\Components\TextEntry),
+        );
+
+        $this->assertContains('first_name', $textEntryNames, 'Customer Profile section fields must remain in infolist.');
+        $this->assertContains('email', $textEntryNames, 'Customer Profile section fields must remain in infolist.');
+    }
+
+    public function test_customer_resource_relation_managers_include_addresses(): void
+    {
+        $relations = CustomerResource::getRelations();
+
+        $this->assertContains(
+            AddressesRelationManager::class,
+            $relations,
+            'AddressesRelationManager must remain registered in CustomerResource::getRelations().',
+        );
     }
 }

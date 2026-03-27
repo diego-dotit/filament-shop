@@ -126,6 +126,26 @@ class ProductResourceTest extends TestCase
         $this->assertNull($data['special_price']);
     }
 
+    // ── resolveImages() return-type tests ─────────────────────────────────
+
+    public function test_resolve_images_returns_array_not_string(): void
+    {
+        $product  = $this->makeProduct();
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertIsArray($data['images'], 'images field must be an array, not a string or null');
+    }
+
+    public function test_resolve_images_returns_empty_array_when_no_images_exist(): void
+    {
+        $product  = $this->makeProduct();
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertSame([], $data['images'], 'images field must be an empty array when no media exists');
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
