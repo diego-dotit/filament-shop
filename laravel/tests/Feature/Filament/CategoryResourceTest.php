@@ -3,6 +3,7 @@
 namespace Tests\Feature\Filament;
 
 use App\Domains\Category\Models\Category;
+use App\Domains\Language\Models\Language;
 use App\Filament\Resources\CategoryResource;
 use App\Filament\Resources\CategoryResource\Pages\CreateCategory;
 use App\Filament\Resources\CategoryResource\Pages\EditCategory;
@@ -210,22 +211,30 @@ class CategoryResourceTest extends TestCase
 
     public function test_create_category_slug_must_be_unique(): void
     {
-        Category::factory()->create(['slug' => 'existing-slug']);
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        $existing = Category::factory()->create(['slug' => 'existing-slug']);
+        $existing->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            ['slug'   => 'existing-slug'],
+        );
 
         Livewire::test(CreateCategory::class)
             ->fillForm([
-                'name' => ['en' => 'Another Category'],
-                'slug' => 'existing-slug',
+                'name'    => ['en' => 'Another Category'],
+                'slug_en' => 'existing-slug',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_slug_is_auto_generated_from_name(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateCategory::class)
             ->fillForm(['name' => ['en' => 'My New Category']])
-            ->assertFormFieldIsVisible('slug');
+            ->assertFormFieldExists('slug_en');
     }
 
     // ── Edit Page ─────────────────────────────────────────────────────────

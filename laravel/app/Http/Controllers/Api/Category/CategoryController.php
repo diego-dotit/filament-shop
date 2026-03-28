@@ -26,7 +26,10 @@ class CategoryController extends Controller
     {
         $category = Category::where('slug', $slug)
             ->where('is_active', true)
-            ->with(['children' => fn ($q) => $q->where('is_active', true)])
+            ->with([
+                'children' => fn ($q) => $q->where('is_active', true),
+                'parent',
+            ])
             ->firstOrFail();
 
         return new CategoryResource($category);

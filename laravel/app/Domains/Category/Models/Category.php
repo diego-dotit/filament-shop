@@ -3,6 +3,7 @@
 namespace App\Domains\Category\Models;
 
 use App\Domains\Product\Models\Product;
+use App\Domains\Shared\Traits\HasSlugs;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ use Spatie\Translatable\HasTranslations;
 class Category extends Model implements HasMedia
 {
     use HasFactory;
+    use HasSlugs;
     use HasTranslations;
     use InteractsWithMedia;
 

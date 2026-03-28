@@ -276,23 +276,28 @@ describe("Product detail page — review form integration", () => {
             },
         ],
         attributes: { material: "PLA" },
-        reviews: [{ id: 1, rating: 5, comment: "Excellent!", customer_name: "Alice" }],
+        reviews: [{ id: 1, rating: 5, comment: "Excellent!", customer_name: "Alice", customer_id: 1 }],
         ...overrides,
     });
 
     function setupPageStubs({
-        product = makeProduct(),
+        product,
         isAuthenticated = true,
         userName = "Bob",
+        userId = 1,
+        reviews,
     }: {
         product?: ReturnType<typeof makeProduct> | null;
         isAuthenticated?: boolean;
         userName?: string;
+        userId?: number;
+        reviews?: Array<{ id: number; rating: number; comment: string; customer_name: string; customer_id: number }>;
     } = {}) {
+        const resolvedProduct = product !== undefined ? product : makeProduct(reviews ? { reviews } : {});
         vi.stubGlobal("useRoute", () => ({ params: { slug: "pla-filament" } }));
         vi.stubGlobal("useProducts", () => ({
-            fetchProductBySlug: vi.fn().mockResolvedValue(product),
-            currentProduct: ref(product),
+            fetchProductBySlug: vi.fn().mockResolvedValue(resolvedProduct),
+            currentProduct: ref(resolvedProduct),
             error: ref(null),
         }));
         vi.stubGlobal("useCart", () => ({
@@ -300,9 +305,11 @@ describe("Product detail page — review form integration", () => {
             cart: ref(null),
             itemCount: computed(() => 0),
         }));
+        // Reset useApi to a clean no-op so previous test stubs don't bleed through
+        vi.stubGlobal("useApi", () => vi.fn());
 
         const user = isAuthenticated
-            ? ref({ id: 1, name: userName, email: `${userName.toLowerCase()}@example.com` })
+            ? ref({ id: userId, name: userName, email: `${userName.toLowerCase()}@example.com` })
             : ref(null);
         vi.stubGlobal("useAuth", () => ({
             user,
@@ -352,8 +359,13 @@ describe("Product detail page — review form integration", () => {
     });
 
     it("passes alreadyReviewed=true when user has already reviewed product", async () => {
-        // 'Alice' has already reviewed (review.customer_name === 'Alice')
-        setupPageStubs({ isAuthenticated: true, userName: "Alice" });
+        // User ID 1 matches review.customer_id 1 → already reviewed
+        setupPageStubs({
+            isAuthenticated: true,
+            userName: "Alice",
+            userId: 1,
+            reviews: [{ id: 1, rating: 5, comment: "Excellent!", customer_name: "Alice", customer_id: 1 }],
+        });
 
         const { default: ReviewForm } = await import("../components/ReviewForm.vue");
         const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
@@ -369,5 +381,30 @@ describe("Product detail page — review form integration", () => {
 
         // Review form is present but should have alreadyReviewed=true meaning it shows "already submitted"
         expect(wrapper.text()).toContain("already submitted");
+    });
+
+    it("shows review form when user ID does not match any review customer_id", async () => {
+        // User ID 99 does NOT match review.customer_id 1 → not reviewed yet
+        setupPageStubs({
+            isAuthenticated: true,
+            userName: "Alice",
+            userId: 99,
+            reviews: [{ id: 1, rating: 5, comment: "Excellent!", customer_name: "Alice", customer_id: 1 }],
+        });
+
+        const { default: ReviewForm } = await import("../components/ReviewForm.vue");
+        const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
+        const wrapper = mount(ProductDetailPage, {
+            global: {
+                stubs: { NuxtLink: { template: "<a><slot /></a>" } },
+                components: { ReviewForm },
+            },
+        });
+
+        await new Promise((r) => setTimeout(r, 0));
+        await wrapper.vm.$nextTick();
+
+        // Form should be visible because user has not reviewed
+        expect(wrapper.find('[data-testid="review-form"]').exists()).toBe(true);
     });
 });

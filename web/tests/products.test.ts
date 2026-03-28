@@ -230,7 +230,7 @@ describe("useProducts composable", () => {
 
         expect(mockFetch).toHaveBeenCalledWith(
             "/products/pla-filament",
-            expect.objectContaining({})
+            expect.anything()
         );
     });
 

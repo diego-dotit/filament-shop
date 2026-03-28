@@ -81,6 +81,20 @@ class CategoryTest extends TestCase
         $this->assertSame('category_product', $relation->getTable());
     }
 
+    // ── HasSlugs ──────────────────────────────────────────────────────────────
+
+    public function test_category_uses_has_slugs_trait(): void
+    {
+        $traits = class_uses_recursive(Category::class);
+
+        $this->assertContains(\App\Domains\Shared\Traits\HasSlugs::class, $traits);
+    }
+
+    public function test_slugs_method_exists_on_category(): void
+    {
+        $this->assertTrue(method_exists(Category::class, 'slugs'));
+    }
+
     // ── Translatable ─────────────────────────────────────────────────────────
 
     public function test_category_uses_has_translations_trait(): void

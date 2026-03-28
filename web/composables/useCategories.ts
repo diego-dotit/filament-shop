@@ -1,9 +1,13 @@
 // composables/useCategories.ts
-// Provides reactive category data: listing all top-level categories.
+// Provides reactive category data: listing all top-level categories,
+// and fetching a single category by slug with locale and slugs support.
 //
 // Usage:
-//   const { categories, fetchCategories, error } = useCategories()
+//   const { categories, fetchCategories, fetchCategoryBySlug, error } = useCategories()
 //   await fetchCategories()
+//   const category = await fetchCategoryBySlug('pla-category')
+
+import type { SlugRecord } from "~/composables/useSlug";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -14,11 +18,18 @@ export interface CategoryResource {
     name: string;
     slug: string;
     image?: string | null;
+    locale?: string;
+    slugs?: SlugRecord[];
     children: CategoryResource[];
+    parent?: { id: number; name: string; slug: string } | null;
 }
 
 interface CategoriesResponse {
     data: CategoryResource[];
+}
+
+interface SingleCategoryResponse {
+    data: CategoryResource;
 }
 
 // ---------------------------------------------------------------------------
@@ -46,9 +57,23 @@ export function useCategories() {
         }
     }
 
+    /**
+     * Fetch a single category by its slug.
+     * Returns the full CategoryResource including locale, slugs array,
+     * and the complete hierarchy with all children also carrying slugs.
+     * Re-throws all errors (including 404) so the caller can handle them.
+     *
+     * @param slug - The category's URL slug.
+     */
+    async function fetchCategoryBySlug(slug: string): Promise<CategoryResource> {
+        const response = await api<SingleCategoryResponse>(`/categories/${slug}`, {});
+        return response.data;
+    }
+
     return {
         categories,
         error,
         fetchCategories,
+        fetchCategoryBySlug,
     };
 }

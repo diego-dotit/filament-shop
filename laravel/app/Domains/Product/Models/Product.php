@@ -5,6 +5,7 @@ namespace App\Domains\Product\Models;
 use App\Domains\Category\Models\Category;
 use App\Domains\Manufacturer\Models\Manufacturer;
 use App\Domains\Review\Models\Review;
+use App\Domains\Shared\Traits\HasSlugs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ use Spatie\Translatable\HasTranslations;
 class Product extends Model implements HasMedia
 {
     use HasFactory;
+    use HasSlugs;
     use HasTranslations;
     use InteractsWithMedia;
 

@@ -60,7 +60,9 @@ onMounted(async () => {
     await fetchCategories().catch(() => {
         // Errors are stored in useCategories error state; page still renders
     });
-    fetchProducts(1, pageSize.value);
+    fetchProducts(1, pageSize.value).catch(() => {
+        // Errors are stored in useProducts error state; page still renders
+    });
 });
 
 async function selectCategory(slug: string) {

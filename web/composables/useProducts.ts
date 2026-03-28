@@ -7,9 +7,28 @@
 //   await fetchProducts(1, 15, { category: 'pla' })
 //   const product = await fetchProductBySlug('pla-filament')
 
+import type { SlugRecord } from "~/composables/useSlug";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/** Matches the shape returned by AttributeResource.php (name/value pair). */
+export interface AttributeResource {
+    name: string;
+    value: string;
+}
+
+/**
+ * Minimal category shape returned by the API for product categories.
+ * The API returns a flat slug string (not a slugs array) for product categories.
+ * Phase 3+ multi-locale slug resolution uses ProductResource.slugs instead.
+ */
+export interface ProductCategoryEntity {
+    id: number;
+    name: string;
+    slug: string;
+}
 
 export interface ProductVariantResource {
     id: number;
@@ -17,7 +36,7 @@ export interface ProductVariantResource {
     price: string;
     regular_price?: string | null;
     special_price?: string | null;
-    attributes: Record<string, string>;
+    attributes: AttributeResource[];
 }
 
 export interface ProductResource {
@@ -29,6 +48,16 @@ export interface ProductResource {
     images: string[];
     variants: ProductVariantResource[];
     attributes: Record<string, string>;
+    /** The locale of the slug that was used to resolve this product (Phase 3+). */
+    locale?: string;
+    /** All available language slugs for this product (Phase 3+). */
+    slugs?: SlugRecord[];
+    /**
+     * Category hierarchy for the product (Phase 4+).
+     * categories[0] = top-level category, categories[1] = subcategory.
+     * Used by ProductCard to build multi-segment, language-aware URLs.
+     */
+    categories?: ProductCategoryEntity[];
 }
 
 interface PaginationMeta {

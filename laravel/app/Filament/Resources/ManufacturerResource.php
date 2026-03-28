@@ -14,7 +14,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Unique;
 
 class ManufacturerResource extends Resource
 {
@@ -52,10 +54,23 @@ class ManufacturerResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->unique(
-                            table: 'manufacturers',
+                            table: 'slugs',
                             column: 'slug',
-                            ignoreRecord: true,
+                            modifyRuleUsing: function (Unique $rule, ?Model $record): Unique {
+                                if ($record !== null) {
+                                    // Ignore only the current manufacturer's own slug entry.
+                                    // This preserves cross-resource uniqueness (a Product's slug
+                                    // still blocks a Manufacturer from using the same value).
+                                    $rule->where(function ($query) use ($record): void {
+                                        $query->where('sluggable_type', '!=', Manufacturer::class)
+                                            ->orWhere('sluggable_id', '!=', $record->id);
+                                    });
+                                }
+
+                                return $rule;
+                            },
                         )
+                        ->alphaDash()
                         ->helperText('Auto-generated from name. Must be unique.'),
                 ])
                 ->columns(2),

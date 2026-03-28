@@ -1,8 +1,16 @@
 <template>
     <div class="category-page">
-        <!-- Back link to homepage -->
+        <!-- Back link to homepage + full breadcrumb path -->
         <nav class="category-page__breadcrumb">
-            <NuxtLink to="/">← Home</NuxtLink>
+            <NuxtLink to="/">Home</NuxtLink>
+            <template v-if="category">
+                <template v-if="category.parent">
+                    <span class="category-page__breadcrumb-sep"> → </span>
+                    <NuxtLink :to="'/' + category.parent.slug">{{ category.parent.name }}</NuxtLink>
+                </template>
+                <span class="category-page__breadcrumb-sep"> → </span>
+                <span>{{ category.name }}</span>
+            </template>
         </nav>
 
         <!-- Error state -->
@@ -39,15 +47,13 @@
             >
                 <h2 class="category-page__subcategories-title">Subcategories</h2>
                 <div class="category-page__subcategories-list">
-                    <NuxtLink
+                    <CategoryChip
                         v-for="child in category.children"
                         :key="child.id"
-                        :to="`/categories/${child.slug}`"
-                        class="category-page__subcategory-chip"
+                        :category="child"
+                        :parent-slug="category.slug"
                         data-testid="subcategory-chip"
-                    >
-                        {{ child.name }}
-                    </NuxtLink>
+                    />
                 </div>
             </section>
 
@@ -76,18 +82,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface CategoryResource {
-    id: number;
-    name: string;
-    slug: string;
-    image?: string | null;
-    children: CategoryResource[];
-}
+import type { CategoryResource } from "~/composables/useCategories";
 
 // ---------------------------------------------------------------------------
 // State
@@ -148,7 +143,7 @@ onMounted(async () => {
             (e as { response?: { status?: number } })?.response?.status;
 
         if (status === 404) {
-            throw createError({ statusCode: 404, statusMessage: "Category not found" });
+            notFound.value = true;
         } else {
             throw e;
         }

@@ -20,15 +20,21 @@ class ProductController extends Controller
     {
         $perPage = (int) $request->input('per_page', 15);
 
-        $products = Product::where('is_active', true)
+        $query = Product::where('is_active', true)
             ->with([
                 'variants'         => fn ($q) => $q->where('is_active', true),
                 'variants.attributes',
                 'categories',
+                'categories.slugs',
                 'manufacturers',
                 'productAttributes',
-            ])
-            ->paginate($perPage);
+            ]);
+
+        if ($categorySlug = $request->query('category_slug')) {
+            $query->whereHas('categories', fn ($q) => $q->where('slug', $categorySlug));
+        }
+
+        $products = $query->paginate($perPage);
 
         $data = ProductResource::collection($products)->response()->getData(true);
 
@@ -48,6 +54,7 @@ class ProductController extends Controller
                 'variants'         => fn ($q) => $q->where('is_active', true),
                 'variants.attributes',
                 'categories',
+                'categories.slugs',
                 'manufacturers',
                 'productAttributes',
             ])

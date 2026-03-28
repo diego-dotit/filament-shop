@@ -1,38 +1,55 @@
 <template>
     <div class="categories-page">
         <h1>All Categories</h1>
-        <div v-if="loading">Loading categories...</div>
+        <div v-if="error" class="categories-page__error"><p>{{ error }}</p></div>
+        <div v-else-if="loading">Loading categories...</div>
         <div v-else-if="categories.length === 0"><p>No categories found.</p></div>
         <div v-else class="categories-grid">
-            <NuxtLink
+            <div
                 v-for="cat in categories"
                 :key="cat.id"
-                :to="`/categories/${cat.slug}`"
-                class="category-card"
+                data-testid="category-card"
+                class="category-card-wrapper"
             >
-                <h2>{{ cat.name }}</h2>
-                <p v-if="cat.description">{{ cat.description }}</p>
-            </NuxtLink>
+                <NuxtLink
+                    :to="`/${cat.slug}`"
+                    class="category-card"
+                >
+                    <h2>{{ cat.name }}</h2>
+                    <p v-if="cat.description">{{ cat.description }}</p>
+                </NuxtLink>
+                <div
+                    v-if="cat.children && cat.children.length > 0"
+                    data-testid="subcategories"
+                    class="category-card__subcategories"
+                >
+                    <CategoryChip
+                        v-for="child in cat.children"
+                        :key="child.id"
+                        :category="child"
+                        :parent-slug="cat.slug"
+                        data-testid="subcategory-chip"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-interface Category {
-    id: number;
-    name: string;
-    slug: string;
-    description?: string;
-}
+import type { CategoryResource } from "~/composables/useCategories";
 
 const api = useApi();
 const loading = ref(true);
-const categories = ref<Category[]>([]);
+const categories = ref<CategoryResource[]>([]);
+const error = ref<string | null>(null);
 
 onMounted(async () => {
     try {
-        const response = await api<{ data: Category[] }>("/categories");
+        const response = await api<{ data: CategoryResource[] }>("/categories");
         categories.value = response.data;
+    } catch {
+        error.value = "Failed to load categories. Please try again.";
     } finally {
         loading.value = false;
     }
@@ -100,5 +117,34 @@ onMounted(async () => {
     color: #6b7280;
     margin: 0;
     line-height: 1.5;
+}
+
+.category-card__subcategories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: #f9fafb;
+}
+
+.category-card__subcategory-chip {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    color: #374151;
+    text-decoration: none;
+    background: #fff;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.category-card__subcategory-chip:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #2563eb;
 }
 </style>

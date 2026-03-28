@@ -18,7 +18,7 @@ class CategoryResource extends JsonResource
 
         return [
             'id'       => $this->id,
-            'slug'     => $this->slug,
+            'slug'     => $this->getSlugForLocale($lang)?->slug ?? $this->slug,
             'name'     => $this->getTranslation('name', $lang),
             'is_active' => $this->is_active,
             'children' => static::collection(
@@ -27,6 +27,14 @@ class CategoryResource extends JsonResource
                     : collect()
             ),
             'image'    => $this->resolveImage(),
+            'parent'   => $this->when(
+                $this->resource->relationLoaded('parent') && $this->parent !== null,
+                fn () => [
+                    'id'   => $this->parent->id,
+                    'slug' => $this->parent->getSlugForLocale($lang)?->slug ?? $this->parent->slug,
+                    'name' => $this->parent->getTranslation('name', $lang),
+                ]
+            ),
         ];
     }
 

@@ -26,7 +26,7 @@ class ProductResourceTest extends TestCase
         $this->assertArrayHasKey('is_active', $data);
         $this->assertArrayHasKey('variants', $data);
         $this->assertArrayHasKey('images', $data);
-        $this->assertArrayHasKey('product_attributes', $data);
+        $this->assertArrayHasKey('attributes', $data);
         $this->assertArrayHasKey('categories', $data);
         $this->assertArrayHasKey('manufacturers', $data);
     }
@@ -124,6 +124,49 @@ class ProductResourceTest extends TestCase
 
         $this->assertEqualsWithDelta(30.0, $data['regular_price'], 0.001);
         $this->assertNull($data['special_price']);
+    }
+
+    public function test_product_resource_does_not_have_product_attributes_key(): void
+    {
+        $product = $this->makeProduct();
+
+        $resource = new ProductResource($product);
+        $data = $resource->toArray(Request::create('/'));
+
+        $this->assertArrayNotHasKey('product_attributes', $data);
+    }
+
+    public function test_product_resource_attributes_is_empty_object_when_no_attributes(): void
+    {
+        $product = $this->makeProduct();
+        $product->setRelation('productAttributes', collect([]));
+
+        $resource = new ProductResource($product);
+        $response = $resource->response(Request::create('/'));
+        $json     = json_decode($response->getContent(), true);
+
+        $this->assertIsArray($json['data']['attributes']);
+        // Must serialize as {} (object), not [] (array) — verify via raw JSON
+        $raw = $response->getContent();
+        $this->assertStringContainsString('"attributes":{}', str_replace(' ', '', $raw));
+    }
+
+    public function test_product_resource_attributes_is_flat_key_value_object(): void
+    {
+        $attributeStub = new \stdClass();
+        $attributeStub->name = 'Color';
+
+        $productAttrStub = new \stdClass();
+        $productAttrStub->value = 'Red';
+        $productAttrStub->attribute = $attributeStub;
+
+        $product = $this->makeProduct();
+        $product->setRelation('productAttributes', collect([$productAttrStub]));
+
+        $resource = new ProductResource($product);
+        $data = $resource->toArray(Request::create('/'));
+
+        $this->assertSame(['Color' => 'Red'], $data['attributes']);
     }
 
     // ── resolveImages() return-type tests ─────────────────────────────────

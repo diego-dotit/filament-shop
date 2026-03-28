@@ -27,7 +27,7 @@
                 <button type="submit" :disabled="submitting">
                     {{ submitting ? "Saving..." : "Save Address" }}
                 </button>
-                <NuxtLink to="/checkout">Cancel</NuxtLink>
+                <NuxtLink to="/account/addresses">Cancel</NuxtLink>
             </div>
         </form>
     </div>
@@ -58,7 +58,7 @@ async function handleSubmit() {
             method: "POST",
             body: form,
         });
-        const redirect = (route.query.redirect as string) || "/checkout";
+        const redirect = route.query.redirect === "/checkout" ? "/checkout" : "/account/addresses";
         await navigateTo(redirect);
     } catch (err: unknown) {
         const e = err as { data?: { message?: string }; message?: string } | null;

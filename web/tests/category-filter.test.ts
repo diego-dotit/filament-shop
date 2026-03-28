@@ -17,7 +17,7 @@ vi.stubGlobal("useRuntimeConfig", () => ({
 }));
 
 // useProducts mock
-const mockFetchProducts = vi.fn();
+const mockFetchProducts = vi.fn().mockResolvedValue(undefined);
 const mockProducts = ref<
     Array<{ id: number; name: string; slug: string; price: string; images: string[] }>
 >([]);
@@ -34,7 +34,7 @@ vi.stubGlobal("useProducts", () => ({
 }));
 
 // useCategories mock
-const mockFetchCategories = vi.fn();
+const mockFetchCategories = vi.fn().mockResolvedValue(undefined);
 const mockCategories = ref([
     { id: 1, name: "PLA", slug: "pla", children: [] },
     { id: 2, name: "PETG", slug: "petg", children: [] },

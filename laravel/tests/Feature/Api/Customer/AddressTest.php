@@ -160,6 +160,63 @@ class AddressTest extends TestCase
             ->assertJsonValidationErrors(['country']);
     }
 
+    // ── GET /api/customers/me/addresses/{id} ─────────────────────────────────
+
+    public function test_show_address_requires_authentication(): void
+    {
+        [$user, $customer] = $this->createUserWithCustomer();
+        $address = $this->createAddress($customer);
+
+        $response = $this->getJson("/api/customers/me/addresses/{$address->id}");
+
+        $response->assertStatus(401);
+    }
+
+    public function test_show_address_returns_address_data(): void
+    {
+        [$user, $customer] = $this->createUserWithCustomer();
+        $address = $this->createAddress($customer, [
+            'country'        => 'UK',
+            'city'           => 'London',
+            'address_line_1' => '10 Downing St',
+            'address_line_2' => 'Flat 2',
+            'postcode'       => 'SW1A 2AA',
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/customers/me/addresses/{$address->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.id', $address->id)
+            ->assertJsonPath('data.country', 'UK')
+            ->assertJsonPath('data.city', 'London')
+            ->assertJsonPath('data.address_line_1', '10 Downing St')
+            ->assertJsonPath('data.address_line_2', 'Flat 2')
+            ->assertJsonPath('data.postcode', 'SW1A 2AA');
+    }
+
+    public function test_show_address_returns_403_for_other_customers_address(): void
+    {
+        [$user, $customer] = $this->createUserWithCustomer();
+        [$otherUser, $otherCustomer] = $this->createUserWithCustomer(['email' => 'other@example.com']);
+        $otherAddress = $this->createAddress($otherCustomer, ['city' => 'Miami']);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/customers/me/addresses/{$otherAddress->id}");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_show_address_returns_404_for_nonexistent_address(): void
+    {
+        [$user, $customer] = $this->createUserWithCustomer();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/customers/me/addresses/99999');
+
+        $response->assertStatus(404);
+    }
+
     // ── PUT /api/customers/me/addresses/{id} ─────────────────────────────────
 
     public function test_update_address_requires_authentication(): void

@@ -1,6 +1,6 @@
 <template>
     <article class="product-card">
-        <NuxtLink :to="`/products/${product.slug}`" class="product-card__link">
+        <NuxtLink :to="productUrl" class="product-card__link">
             <div class="product-card__image-wrapper">
                 <img :src="imageSrc" :alt="product.name" class="product-card__image" />
             </div>
@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ProductResource } from "~/composables/useProducts";
 
 const PLACEHOLDER = "/images/placeholder.png";
@@ -20,6 +21,8 @@ const PLACEHOLDER = "/images/placeholder.png";
 const props = defineProps<{
     product: ProductResource;
 }>();
+
+const productUrl = computed<string>(() => '/' + props.product.slug);
 
 const imageSrc = computed<string>(() =>
     props.product.images && props.product.images.length > 0 ? props.product.images[0] : PLACEHOLDER

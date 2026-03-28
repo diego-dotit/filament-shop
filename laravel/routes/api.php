@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->prefix('customers')->group(function () {
 
     Route::get('me/addresses', [AddressController::class, 'index']);
     Route::post('me/addresses', [AddressController::class, 'store']);
+    Route::get('me/addresses/{address}', [AddressController::class, 'show']);
     Route::put('me/addresses/{address}', [AddressController::class, 'update']);
     Route::delete('me/addresses/{address}', [AddressController::class, 'destroy']);
 });

@@ -36,6 +36,14 @@ class OrderController extends Controller
         // Currency is resolved by ResolveLanguageAndCurrency middleware
         $currency = $request->attributes->get('currency');
 
+        if ($currency === null) {
+            return ApiResponse::error(
+                'no_base_currency',
+                'No base currency is configured. Please contact support.',
+                503,
+            );
+        }
+
         try {
             $order = $this->orderPlacementService->placeOrder(
                 $customer,

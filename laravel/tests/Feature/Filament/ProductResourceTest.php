@@ -113,12 +113,14 @@ class ProductResourceTest extends TestCase
     public function test_create_product_requires_unique_slug(): void
     {
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
-        Product::factory()->create(['slug' => 'existing-slug']);
+        $product = Product::factory()->create(['slug' => 'existing-slug']);
+        // Ensure the slug entry exists in the slugs table (HasSlugs may use name, not 'slug' column)
+        $product->slugs()->updateOrCreate(['locale' => 'en'], ['slug' => 'existing-slug']);
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
                 'name_en'  => 'Another Product',
-                'slug'     => 'existing-slug',
+                'slug_en'  => 'existing-slug',
                 'variants' => [
                     [
                         'sku'            => 'SKU-003',
@@ -130,7 +132,7 @@ class ProductResourceTest extends TestCase
                 ],
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_sku_must_be_unique_across_variants(): void
@@ -196,7 +198,7 @@ class ProductResourceTest extends TestCase
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->fillForm([
                 'name_en'   => 'Updated Product',
-                'slug'      => 'original-product',
+                'slug_en'   => 'original-product',
                 'is_active' => true,
             ])
             ->call('save')
@@ -236,7 +238,7 @@ class ProductResourceTest extends TestCase
         $component = Livewire::test(CreateProduct::class);
 
         // The form should have a slug field
-        $component->assertFormFieldExists('slug');
+        $component->assertFormFieldExists('slug_en');
     }
 
     // ── Translations ───────────────────────────────────────────────────────

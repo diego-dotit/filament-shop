@@ -18,6 +18,9 @@ vi.stubGlobal("useState", (key: string, init: () => unknown) => {
 });
 
 // Stubs for other composables Header/Footer may need
+vi.stubGlobal("useLocalization", () => ({
+    language: ref("en"),
+}));
 vi.stubGlobal("useAuth", () => ({
     user: ref(null),
     isAuthenticated: computed(() => false),
@@ -96,6 +99,10 @@ function makeProductListResponse(overrides: Record<string, unknown> = {}) {
 
 const globalStubs = {
     NuxtLink: { template: "<a><slot /></a>" },
+    CategoryChip: {
+        props: ["category", "parentSlug"],
+        template: '<a :href="parentSlug ? `/${parentSlug}/${category.slug}` : `/${category.slug}`">{{ category.name }}</a>',
+    },
     ProductCard: {
         template: '<div class="product-card">{{ product.name }}</div>',
         props: ["product"],
@@ -183,17 +190,18 @@ describe("Category page [slug].vue", () => {
         expect(cards).toHaveLength(2);
     });
 
-    it("calls createError with statusCode 404 when category is not found", async () => {
+    it("shows error UI when category is not found (404)", async () => {
         const notFoundError = Object.assign(new Error("Not Found"), { statusCode: 404 });
         mockApi.mockRejectedValueOnce(notFoundError);
 
         const { default: CategoryPage } = await import("../pages/categories/[slug].vue");
-        mount(CategoryPage, { global: { stubs: globalStubs } });
+        const wrapper = mount(CategoryPage, { global: { stubs: globalStubs } });
 
         await new Promise((r) => setTimeout(r, 0));
         await new Promise((r) => setTimeout(r, 0));
+        await wrapper.vm.$nextTick();
 
-        expect(mockCreateError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
+        expect(wrapper.find(".category-page__error").exists()).toBe(true);
     });
 
     it("shows a 404 error message when category is not found", async () => {
@@ -201,13 +209,14 @@ describe("Category page [slug].vue", () => {
         mockApi.mockRejectedValueOnce(notFoundError);
 
         const { default: CategoryPage } = await import("../pages/categories/[slug].vue");
-        mount(CategoryPage, { global: { stubs: globalStubs } });
+        const wrapper = mount(CategoryPage, { global: { stubs: globalStubs } });
 
         await new Promise((r) => setTimeout(r, 0));
         await new Promise((r) => setTimeout(r, 0));
+        await wrapper.vm.$nextTick();
 
-        // createError should have been called with 404 (Nuxt handles rendering error.vue)
-        expect(mockCreateError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
+        expect(wrapper.find(".category-page__error").exists()).toBe(true);
+        expect(wrapper.text()).toContain("Category not found");
     });
 
     it("renders a back link to the homepage", async () => {
@@ -318,7 +327,7 @@ describe("Category page [slug].vue", () => {
         expect(chips[1].text()).toBe("PLA Matte");
     });
 
-    it("subcategory chip links to /categories/[child-slug]", async () => {
+    it("subcategory chip links to /{parent-slug}/{child-slug}", async () => {
         mockApi
             .mockResolvedValueOnce({
                 data: {
@@ -348,7 +357,7 @@ describe("Category page [slug].vue", () => {
         await wrapper.vm.$nextTick();
 
         const chip = wrapper.find('[data-testid="subcategory-chip"]');
-        expect(chip.attributes("href")).toBe("/categories/pla-silk");
+        expect(chip.attributes("href")).toBe("/pla-category/pla-silk");
     });
 
     it("subcategories section appears before the products grid", async () => {

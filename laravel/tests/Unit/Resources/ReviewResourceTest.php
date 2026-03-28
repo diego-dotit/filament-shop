@@ -21,6 +21,7 @@ class ReviewResourceTest extends TestCase
         $this->assertArrayHasKey('rating', $data);
         $this->assertArrayHasKey('comment', $data);
         $this->assertArrayHasKey('customer_name', $data);
+        $this->assertArrayHasKey('customer_id', $data);
         $this->assertArrayHasKey('status', $data);
         $this->assertArrayHasKey('created_at', $data);
     }
@@ -52,6 +53,7 @@ class ReviewResourceTest extends TestCase
         $this->assertSame('Great product!', $data['comment']);
         $this->assertSame('pending', $data['status']);
         $this->assertSame('Alice Wonder', $data['customer_name']);
+        $this->assertSame(10, $data['customer_id']);
     }
 
     public function test_review_resource_handles_missing_customer(): void
@@ -63,6 +65,7 @@ class ReviewResourceTest extends TestCase
         $data = $resource->toArray(Request::create('/'));
 
         $this->assertNull($data['customer_name']);
+        $this->assertNull($data['customer_id']);
     }
 
     // -----------------------------------------------------------------------

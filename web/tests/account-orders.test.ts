@@ -292,7 +292,7 @@ describe("Account Orders List Page", () => {
     it("redirects unauthenticated users to /login", async () => {
         mockIsAuthenticated.value = false;
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         mount(OrdersPage, {
             global: { stubs: globalStubs },
         });
@@ -303,7 +303,7 @@ describe("Account Orders List Page", () => {
     it("calls GET /customers/me/orders on mount when authenticated", async () => {
         mockFetchOrders.mockResolvedValueOnce(undefined);
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         mount(OrdersPage, {
             global: { stubs: globalStubs },
         });
@@ -315,7 +315,7 @@ describe("Account Orders List Page", () => {
         mockOrders$.value = mockOrders;
         mockFetchOrders.mockResolvedValueOnce(undefined);
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         const wrapper = mount(OrdersPage, {
             global: { stubs: globalStubs },
         });
@@ -332,7 +332,7 @@ describe("Account Orders List Page", () => {
         mockOrders$.value = [];
         mockFetchOrders.mockResolvedValueOnce(undefined);
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         const wrapper = mount(OrdersPage, {
             global: { stubs: globalStubs },
         });
@@ -346,7 +346,7 @@ describe("Account Orders List Page", () => {
         mockOrders$.value = mockOrders;
         mockFetchOrders.mockResolvedValueOnce(undefined);
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         const wrapper = mount(OrdersPage, {
             global: { stubs: globalStubs },
         });
@@ -362,7 +362,7 @@ describe("Account Orders List Page", () => {
         mockLoading$.value = true;
         mockFetchOrders.mockResolvedValueOnce(undefined);
 
-        const { default: OrdersPage } = await import("../pages/account/orders.vue");
+        const { default: OrdersPage } = await import("../pages/account/orders/index.vue");
         const wrapper = mount(OrdersPage, {
             global: { stubs: globalStubs },
         });

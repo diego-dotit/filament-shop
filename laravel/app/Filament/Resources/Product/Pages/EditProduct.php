@@ -41,6 +41,7 @@ class EditProduct extends EditRecord
             $code = $language->code;
             $data["name_{$code}"]        = $this->record->getTranslation('name', $code, false);
             $data["description_{$code}"] = $this->record->getTranslation('description', $code, false);
+            $data["slug_{$code}"]        = $this->record->getSlugForLocale($code)?->slug;
         }
 
         return $data;

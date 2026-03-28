@@ -109,7 +109,15 @@ async function handleSubmit(): Promise<void> {
             return;
         }
 
-        // Success — reset form and navigate.
+        // Success — hydrate cart before navigating so the header count is current.
+        try {
+            const { fetchCart } = useCart();
+            await fetchCart();
+        } catch {
+            // Cart load failure must not block redirect
+        }
+
+        // Reset form and navigate.
         email.value = "";
         password.value = "";
 

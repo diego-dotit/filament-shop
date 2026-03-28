@@ -128,8 +128,8 @@ describe("Route middleware configuration", () => {
         );
     });
 
-    it("account/orders.vue registers auth middleware via definePageMeta", async () => {
-        await import("../pages/account/orders.vue");
+    it("account/orders/index.vue registers auth middleware via definePageMeta", async () => {
+        await import("../pages/account/orders/index.vue");
         expect(mockDefinePageMeta).toHaveBeenCalledWith(
             expect.objectContaining({ middleware: "auth" })
         );

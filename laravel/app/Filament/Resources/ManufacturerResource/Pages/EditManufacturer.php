@@ -21,4 +21,39 @@ class EditManufacturer extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    /**
+     * Pre-populate the slug field from the polymorphic slugs table.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $locale = config('app.locale', 'en');
+
+        $slug = $this->record->getSlugForLocale($locale)
+            ?? $this->record->slugs()->first();
+
+        $data['slug'] = $slug?->slug ?? '';
+
+        return $data;
+    }
+
+    /**
+     * Persist the manually-entered slug value to the polymorphic slugs table.
+     */
+    protected function afterSave(): void
+    {
+        $slug = $this->data['slug'] ?? null;
+
+        if ($slug !== null && $slug !== '') {
+            $locale = config('app.locale', 'en');
+
+            $this->record->slugs()->updateOrCreate(
+                ['locale' => $locale],
+                ['slug'   => $slug],
+            );
+        }
+    }
 }

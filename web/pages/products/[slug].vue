@@ -12,6 +12,9 @@
 
         <!-- Product content -->
         <div v-else-if="product" class="product-detail__content">
+            <!-- Breadcrumb navigation -->
+            <Breadcrumb :items="breadcrumbItems" />
+
             <!-- Image Gallery -->
             <section class="product-detail__gallery">
                 <div v-if="product.images && product.images.length > 0" class="gallery">
@@ -150,6 +153,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import Breadcrumb from "~/components/Breadcrumb.vue";
+import type { BreadcrumbItem } from "~/components/Breadcrumb.vue";
+
 
 // ---------------------------------------------------------------------------
 // Types (extending ProductResource with reviews)
@@ -160,6 +166,7 @@ interface ReviewResource {
     rating: number;
     comment: string;
     customer_name: string;
+    customer_id?: number;
 }
 
 interface ProductVariantWithStock {
@@ -168,7 +175,13 @@ interface ProductVariantWithStock {
     regular_price: string;
     special_price?: string;
     stock_quantity: number;
-    attributes: Record<string, string>;
+    attributes: Array<{ name: string; value: string }>;
+}
+
+interface ProductCategoryWithName {
+    id: number;
+    name: string;
+    slug: string;
 }
 
 interface ProductWithReviews {
@@ -181,6 +194,7 @@ interface ProductWithReviews {
     variants: ProductVariantWithStock[];
     attributes: Record<string, string>;
     reviews?: ReviewResource[];
+    categories?: ProductCategoryWithName[];
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +205,7 @@ const route = useRoute();
 const { fetchProductBySlug, error } = useProducts();
 const { addItem } = useCart();
 const { user } = useAuth();
+const api = useApi();
 
 // ---------------------------------------------------------------------------
 // State
@@ -235,7 +250,27 @@ const canAddToCart = computed<boolean>(() => {
 
 const hasUserReviewed = computed<boolean>(() => {
     if (!user.value || !product.value?.reviews) return false;
-    return product.value.reviews.some((r) => r.customer_name === user.value!.name);
+    return product.value.reviews.some((r) => r.customer_id === user.value!.id);
+});
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+    if (!product.value) return [];
+
+    const categoryItems: BreadcrumbItem[] = (product.value.categories ?? []).map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slugs: [],
+        url: `/${cat.slug || String(cat.id)}`,
+    }));
+
+    const productItem: BreadcrumbItem = {
+        id: product.value.id,
+        name: product.value.name,
+        slugs: [],
+        // no url → renders as non-clickable current page indicator
+    };
+
+    return [...categoryItems, productItem];
 });
 
 // ---------------------------------------------------------------------------
@@ -243,7 +278,7 @@ const hasUserReviewed = computed<boolean>(() => {
 // ---------------------------------------------------------------------------
 
 function formatVariantLabel(variant: ProductVariantWithStock): string {
-    const parts = Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`);
+    const parts = variant.attributes.map(attr => `${attr.name}: ${attr.value}`);
     return parts.length > 0 ? parts.join(", ") : variant.sku;
 }
 
@@ -307,6 +342,18 @@ onMounted(async () => {
 
         if (product.value?.images?.length) {
             selectedImage.value = product.value.images[0];
+        }
+
+        // Fetch approved reviews from the dedicated endpoint (ordered latest first by API).
+        try {
+            const reviewsResponse = await api<{ data: ReviewResource[] }>(
+                `/products/${product.value.id}/reviews`
+            );
+            if (product.value) {
+                product.value = { ...product.value, reviews: reviewsResponse?.data ?? [] };
+            }
+        } catch (err: unknown) {
+            console.error("Failed to load reviews:", err);
         }
     } finally {
         loading.value = false;

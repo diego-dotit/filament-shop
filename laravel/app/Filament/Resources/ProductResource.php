@@ -21,7 +21,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Unique;
 
 class ProductResource extends Resource
 {
@@ -49,16 +51,32 @@ class ProductResource extends Resource
                         ->maxLength(255)
                         ->live(onBlur: true)
                         ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($language, $defaultCode): void {
-                            if ($language->code !== $defaultCode) {
-                                return;
-                            }
                             $oldStr      = is_string($old) ? $old : '';
                             $stateStr    = is_string($state) ? $state : '';
-                            $currentSlug = $get('slug') ?? '';
+                            $currentSlug = $get("slug_{$language->code}") ?? '';
                             if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
-                                $set('slug', Str::slug($stateStr));
+                                $set("slug_{$language->code}", Str::slug($stateStr));
+                            }
+                            if ($language->code === $defaultCode) {
+                                $globalSlug = $get('slug') ?? '';
+                                if ($globalSlug === '' || $globalSlug === Str::slug($oldStr)) {
+                                    $set('slug', Str::slug($stateStr));
+                                }
                             }
                         }),
+
+                    Forms\Components\TextInput::make("slug_{$language->code}")
+                        ->label('Slug')
+                        ->maxLength(255)
+                        ->alphaDash()
+                        ->unique(
+                            table: 'slugs',
+                            column: 'slug',
+                            modifyRuleUsing: fn (Unique $rule, ?Model $record): Unique => $rule->ignore(
+                                $record?->getSlugForLocale($language->code)?->id
+                            ),
+                        )
+                        ->helperText('Auto-generated from name. You may override manually.'),
 
                     Forms\Components\Textarea::make("description_{$language->code}")
                         ->label('Description')
@@ -78,18 +96,6 @@ class ProductResource extends Resource
 
             Forms\Components\Section::make('Product Information')
                 ->schema([
-                    Forms\Components\TextInput::make('slug')
-                        ->label('Slug')
-                        ->required()
-                        ->maxLength(255)
-                        ->unique(
-                            table: 'products',
-                            column: 'slug',
-                            ignoreRecord: true,
-                        )
-                        ->alphaDash()
-                        ->helperText('Auto-generated from name. Must be unique.'),
-
                     Forms\Components\Toggle::make('is_active')
                         ->label('Active')
                         ->default(true)

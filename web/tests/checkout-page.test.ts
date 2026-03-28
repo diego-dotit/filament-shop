@@ -1,18 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { ref, computed, onMounted, h, defineComponent } from "vue";
+import { ref, computed, reactive, onMounted, watch, nextTick, h, defineComponent } from "vue";
 
 // ---------------------------------------------------------------------------
 // Stub Nuxt globals BEFORE any component is imported.
 // ---------------------------------------------------------------------------
 
+vi.stubGlobal("ref", ref);
 vi.stubGlobal("computed", computed);
+vi.stubGlobal("reactive", reactive);
+vi.stubGlobal("watch", watch);
+vi.stubGlobal("nextTick", nextTick);
 vi.stubGlobal("definePageMeta", vi.fn());
 
 // onMounted: run immediately so side-effects execute in tests
 vi.stubGlobal("onMounted", (cb: () => void | Promise<void>) => {
     return onMounted(cb);
 });
+
+// onBeforeRouteLeave: no-op in tests (navigation guards not needed)
+vi.stubGlobal("onBeforeRouteLeave", vi.fn());
 
 const mockNavigateTo = vi.fn();
 vi.stubGlobal("navigateTo", mockNavigateTo);
@@ -267,5 +274,69 @@ describe("checkout.vue page", () => {
         const wrapper = await mountCheckoutPage();
         const btn = wrapper.find(".submit-order-btn");
         expect(btn.attributes("disabled")).toBeDefined();
+    });
+
+    // ── T2.2: Add new address button ──────────────────────────────────────────
+
+    it("renders 'Add new address' button inside .address-selection when addresses exist", async () => {
+        mockAddresses.value = [
+            {
+                id: 1,
+                address_line_1: "1 Main St",
+                address_line_2: null,
+                city: "Springfield",
+                postcode: "62701",
+                country: "US",
+            },
+        ];
+        const wrapper = await mountCheckoutPage();
+        const section = wrapper.find(".address-selection");
+        expect(section.exists()).toBe(true);
+        const btn = section.find(".add-address-btn");
+        expect(btn.exists()).toBe(true);
+    });
+
+    it("'Add new address' button has type='button' and uses btn btn-secondary classes", async () => {
+        mockAddresses.value = [
+            {
+                id: 1,
+                address_line_1: "1 Main St",
+                address_line_2: null,
+                city: "Springfield",
+                postcode: "62701",
+                country: "US",
+            },
+        ];
+        const wrapper = await mountCheckoutPage();
+        const btn = wrapper.find(".add-address-btn");
+        expect(btn.attributes("type")).toBe("button");
+        expect(btn.classes()).toContain("btn");
+        expect(btn.classes()).toContain("btn-secondary");
+    });
+
+    it("does not render 'Add new address' button when addresses list is empty", async () => {
+        mockAddresses.value = [];
+        const wrapper = await mountCheckoutPage();
+        const btn = wrapper.find(".add-address-btn");
+        expect(btn.exists()).toBe(false);
+    });
+
+    it("clicking 'Add new address' button sets showAddressModal to true", async () => {
+        mockAddresses.value = [
+            {
+                id: 1,
+                address_line_1: "1 Main St",
+                address_line_2: null,
+                city: "Springfield",
+                postcode: "62701",
+                country: "US",
+            },
+        ];
+        const wrapper = await mountCheckoutPage();
+        const vm = wrapper.vm as unknown as { showAddressModal: boolean };
+        expect(vm.showAddressModal).toBe(false);
+        const btn = wrapper.find(".add-address-btn");
+        await btn.trigger("click");
+        expect(vm.showAddressModal).toBe(true);
     });
 });

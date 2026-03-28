@@ -27,7 +27,7 @@ const userRecord = computed(() => user.value as Record<string, unknown>);
         <nav class="account-nav">
             <NuxtLink to="/account/orders" data-testid="nav-orders">My Orders</NuxtLink>
             <NuxtLink to="/account/edit" data-testid="nav-edit">Edit Profile</NuxtLink>
-            <NuxtLink to="/account/addresses/new" data-testid="nav-addresses">Addresses</NuxtLink>
+            <NuxtLink to="/account/addresses" data-testid="nav-addresses">Addresses</NuxtLink>
         </nav>
     </div>
 </template>

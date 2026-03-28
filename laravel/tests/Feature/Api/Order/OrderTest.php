@@ -431,6 +431,30 @@ class OrderTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
+    // POST /api/orders — missing base currency
+    // -----------------------------------------------------------------------
+
+    public function test_place_order_fails_gracefully_when_no_base_currency_is_configured(): void
+    {
+        // Delete all currencies so the middleware resolves null
+        Currency::query()->delete();
+
+        [$user, $customer] = $this->createUserWithCustomer();
+        $this->createCartWithItems($customer);
+        $payload = $this->validOrderPayload($customer);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/orders', $payload);
+
+        $response->assertStatus(503)
+            ->assertJson([
+                'success' => false,
+                'error'   => 'no_base_currency',
+            ])
+            ->assertJsonPath('message', 'No base currency is configured. Please contact support.');
+    }
+
+    // -----------------------------------------------------------------------
     // GET /api/orders — list orders
     // -----------------------------------------------------------------------
 

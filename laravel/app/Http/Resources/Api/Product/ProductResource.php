@@ -33,7 +33,7 @@ class ProductResource extends JsonResource
                     : collect()
             ),
             'images'             => $this->resolveImages(),
-            'product_attributes' => $this->resolveProductAttributes($request),
+            'attributes'         => $this->resolveProductAttributes($request),
             'categories'         => CategoryResource::collection(
                 $this->resource->relationLoaded('categories')
                     ? $this->categories
@@ -89,17 +89,17 @@ class ProductResource extends JsonResource
         return [];
     }
 
-    private function resolveProductAttributes(Request $request): array
+    private function resolveProductAttributes(Request $request): array|\stdClass
     {
         if (! $this->resource->relationLoaded('productAttributes')) {
-            return [];
+            return new \stdClass();
         }
 
-        return $this->productAttributes->map(function ($attr) {
-            return [
-                'name'  => $attr->relationLoaded('attribute') ? $attr->attribute?->name : null,
-                'value' => $attr->value,
-            ];
-        })->toArray();
+        $result = $this->productAttributes
+            ->filter(fn ($attr) => $attr->attribute !== null)
+            ->mapWithKeys(fn ($attr) => [$attr->attribute->name => $attr->value])
+            ->toArray();
+
+        return $result ?: new \stdClass();
     }
 }
