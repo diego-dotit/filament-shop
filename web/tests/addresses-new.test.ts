@@ -175,7 +175,8 @@ describe("addresses/new.vue — redirect after save", () => {
         await wrapper.vm.$nextTick();
 
         expect(mockNavigateTo).not.toHaveBeenCalled();
-        expect(wrapper.find(".error-msg").exists()).toBe(true);
-        expect(wrapper.find(".error-msg").text()).toContain("Validation failed");
+        const alert = wrapper.find('[role="alert"]');
+        expect(alert.exists()).toBe(true);
+        expect(wrapper.text()).toContain("Validation failed");
     });
 });

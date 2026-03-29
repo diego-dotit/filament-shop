@@ -1,54 +1,66 @@
 <template>
-    <div class="login-page">
-        <h1>Login</h1>
+    <div class="min-h-[60vh] flex items-center justify-center px-4 py-12">
+        <Card class="w-full max-w-sm">
+            <CardHeader>
+                <CardTitle class="text-2xl text-center">Login</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+                    <!-- Email field -->
+                    <div class="flex flex-col gap-1.5">
+                        <Label for="email">Email</Label>
+                        <Input
+                            id="email"
+                            v-model="email"
+                            type="email"
+                            name="email"
+                            autocomplete="email"
+                            placeholder="you@example.com"
+                        />
+                        <p v-if="errors.email" class="text-sm text-destructive">{{ errors.email }}</p>
+                    </div>
 
-        <form @submit.prevent="handleSubmit">
-            <!-- Email field -->
-            <div class="field">
-                <label for="email">Email</label>
-                <input
-                    id="email"
-                    v-model="email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    placeholder="you@example.com"
-                />
-                <span v-if="errors.email" class="field-error">{{ errors.email }}</span>
-            </div>
+                    <!-- Password field -->
+                    <div class="flex flex-col gap-1.5">
+                        <Label for="password">Password</Label>
+                        <Input
+                            id="password"
+                            v-model="password"
+                            type="password"
+                            name="password"
+                            autocomplete="current-password"
+                            placeholder="Min. 8 characters"
+                        />
+                        <p v-if="errors.password" class="text-sm text-destructive">{{ errors.password }}</p>
+                    </div>
 
-            <!-- Password field -->
-            <div class="field">
-                <label for="password">Password</label>
-                <input
-                    id="password"
-                    v-model="password"
-                    type="password"
-                    name="password"
-                    autocomplete="current-password"
-                    placeholder="Min. 8 characters"
-                />
-                <span v-if="errors.password" class="field-error">{{ errors.password }}</span>
-            </div>
+                    <!-- API-level error (wrong credentials etc.) -->
+                    <Alert v-if="apiError" variant="destructive">
+                        <AlertDescription>{{ apiError }}</AlertDescription>
+                    </Alert>
 
-            <!-- API-level error (wrong credentials etc.) -->
-            <p v-if="apiError" class="api-error">{{ apiError }}</p>
+                    <!-- Submit -->
+                    <Button type="submit" class="w-full" :disabled="loading">
+                        {{ loading ? 'Logging in…' : 'Login' }}
+                    </Button>
+                </form>
 
-            <!-- Submit -->
-            <button type="submit" :disabled="loading">
-                <span v-if="loading">Logging in…</span>
-                <span v-else>Login</span>
-            </button>
-        </form>
-
-        <p>
-            Don't have an account?
-            <NuxtLink to="/register">Register</NuxtLink>
-        </p>
+                <p class="text-center text-sm text-muted-foreground mt-4">
+                    Don't have an account?
+                    <NuxtLink to="/register" class="underline hover:text-foreground">Register</NuxtLink>
+                </p>
+            </CardContent>
+        </Card>
     </div>
 </template>
 
 <script setup lang="ts">
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 // ---------------------------------------------------------------------------
 // Login page
 // Route: /login
@@ -56,13 +68,12 @@
 // ---------------------------------------------------------------------------
 
 const { isAuthenticated, login } = useAuth();
-const router = useRouter();
 const route = useRoute();
 
 // Redirect already-authenticated visitors immediately.
 if (isAuthenticated.value) {
     const destination = (route.query.redirect as string) || "/";
-    router.push(destination);
+    navigateTo(destination);
 }
 
 // ── Form state ─────────────────────────────────────────────────────────────
@@ -122,7 +133,7 @@ async function handleSubmit(): Promise<void> {
         password.value = "";
 
         const destination = (route.query.redirect as string) || "/";
-        router.push(destination);
+        navigateTo(destination);
     } finally {
         loading.value = false;
     }

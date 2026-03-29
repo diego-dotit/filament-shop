@@ -204,12 +204,10 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Select a variant (the first in-stock one) via the select element
-        const select = wrapper.find("select");
-        if (select.exists()) {
-            await select.setValue("10"); // variant id 10 (Red, in stock)
-            await wrapper.vm.$nextTick();
-        }
+        // Select a variant (the first in-stock one) directly via component state
+        // This works with both HTML <select> and shadcn Select components
+        (wrapper.vm as Record<string, unknown>).selectedVariantId = 10;
+        await wrapper.vm.$nextTick();
 
         const addToCartBtn = wrapper.find('[data-testid="add-to-cart"]');
         expect(addToCartBtn.exists()).toBe(true);

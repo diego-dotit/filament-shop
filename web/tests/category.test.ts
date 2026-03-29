@@ -201,7 +201,7 @@ describe("Category page [slug].vue", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.find(".category-page__error").exists()).toBe(true);
+        expect(wrapper.find('[data-testid="category-error"]').exists()).toBe(true);
     });
 
     it("shows a 404 error message when category is not found", async () => {
@@ -215,7 +215,7 @@ describe("Category page [slug].vue", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.find(".category-page__error").exists()).toBe(true);
+        expect(wrapper.find('[data-testid="category-error"]').exists()).toBe(true);
         expect(wrapper.text()).toContain("Category not found");
     });
 
@@ -383,7 +383,7 @@ describe("Category page [slug].vue", () => {
 
         const html = wrapper.html();
         const subcatPos = html.indexOf('data-testid="subcategories"');
-        const productsPos = html.indexOf("category-page__products");
+        const productsPos = html.indexOf('data-testid="products-section"');
         expect(subcatPos).toBeGreaterThan(-1);
         expect(subcatPos).toBeLessThan(productsPos);
     });

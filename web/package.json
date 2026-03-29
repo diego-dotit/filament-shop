@@ -11,19 +11,32 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vueuse/core": "^14.2.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^1.0.0",
     "nuxt": "^3.21.2",
+    "radix-vue": "^1.9.17",
+    "reka-ui": "^2.9.2",
+    "shadcn-vue": "^2.4.3",
+    "tailwind-merge": "^3.5.0",
     "vue": "^3.5.31",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "@tailwindcss/cli": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.2",
     "@typescript-eslint/parser": "^8.57.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/test-utils": "^2.4.6",
+    "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
     "eslint-plugin-vue": "^10.8.0",
     "happy-dom": "^20.8.8",
+    "postcss": "^8.5.8",
     "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Typography and layout resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

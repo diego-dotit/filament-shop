@@ -1,6 +1,8 @@
 <template>
-    <NuxtLink :to="href" class="category-chip">
-        {{ category.name }}
+    <NuxtLink :to="href">
+        <Badge variant="outline">
+            {{ category.name }}
+        </Badge>
     </NuxtLink>
 </template>
 
@@ -8,6 +10,7 @@
 import { computed } from "vue";
 import { useSlug } from "~/composables/useSlug";
 import type { CategoryResource } from "~/composables/useCategories";
+import { Badge } from "@/components/ui/badge";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -37,26 +40,3 @@ const href = computed<string>(() => {
     return props.parentSlug ? `/${props.parentSlug}/${slug}` : `/${slug}`;
 });
 </script>
-
-<style scoped>
-.category-chip {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    color: #374151;
-    text-decoration: none;
-    background: #fff;
-    transition:
-        background 0.15s,
-        border-color 0.15s,
-        color 0.15s;
-}
-
-.category-chip:hover {
-    background: #eff6ff;
-    border-color: #2563eb;
-    color: #2563eb;
-}
-</style>

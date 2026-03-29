@@ -1,13 +1,13 @@
 <template>
-    <footer class="site-footer">
-        <div class="site-footer__inner">
-            <nav class="site-footer__nav" aria-label="Footer navigation">
-                <NuxtLink to="/about">About</NuxtLink>
-                <NuxtLink to="/contact">Contact</NuxtLink>
-                <NuxtLink to="/terms">Terms</NuxtLink>
-                <NuxtLink to="/privacy">Privacy</NuxtLink>
+    <footer class="bg-slate-900 text-gray-400 py-8 px-6">
+        <div class="max-w-7xl mx-auto flex flex-col items-center gap-4">
+            <nav class="flex gap-6 flex-wrap justify-center" aria-label="Footer navigation">
+                <NuxtLink to="/about" class="text-gray-500 text-sm hover:text-white transition-colors no-underline">About</NuxtLink>
+                <NuxtLink to="/contact" class="text-gray-500 text-sm hover:text-white transition-colors no-underline">Contact</NuxtLink>
+                <NuxtLink to="/terms" class="text-gray-500 text-sm hover:text-white transition-colors no-underline">Terms</NuxtLink>
+                <NuxtLink to="/privacy" class="text-gray-500 text-sm hover:text-white transition-colors no-underline">Privacy</NuxtLink>
             </nav>
-            <p class="site-footer__copy">&copy; {{ year }} Filament Shop. All rights reserved.</p>
+            <p class="text-xs m-0">&copy; {{ year }} Filament Shop. All rights reserved.</p>
         </div>
     </footer>
 </template>
@@ -15,44 +15,3 @@
 <script setup lang="ts">
 const year = new Date().getFullYear();
 </script>
-
-<style scoped>
-.site-footer {
-    background: #1a1a2e;
-    color: #888;
-    padding: 2rem 1.5rem;
-    margin-top: auto;
-}
-
-.site-footer__inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-
-.site-footer__nav {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.site-footer__nav a {
-    color: #aaa;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.15s;
-}
-
-.site-footer__nav a:hover {
-    color: #fff;
-}
-
-.site-footer__copy {
-    font-size: 0.8rem;
-    margin: 0;
-}
-</style>

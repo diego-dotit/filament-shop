@@ -1,35 +1,44 @@
 <template>
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <ol class="breadcrumb__list">
+    <Breadcrumb>
+        <BreadcrumbList>
             <!-- Home item -->
-            <li class="breadcrumb__item">
-                <NuxtLink to="/" class="breadcrumb__link">Home</NuxtLink>
-            </li>
+            <BreadcrumbItem>
+                <BreadcrumbLink as-child>
+                    <NuxtLink to="/">Home</NuxtLink>
+                </BreadcrumbLink>
+            </BreadcrumbItem>
 
             <!-- Dynamic items -->
-            <template v-for="(item, index) in items" :key="item.id">
+            <template v-for="item in items" :key="item.id">
                 <!-- Separator -->
-                <li class="breadcrumb__separator" data-testid="breadcrumb-separator" aria-hidden="true">
-                    →
-                </li>
+                <BreadcrumbSeparator data-testid="breadcrumb-separator" />
 
                 <!-- Item with url → clickable link -->
-                <li class="breadcrumb__item">
-                    <NuxtLink v-if="item.url" :to="item.url" class="breadcrumb__link">
-                        {{ item.name }}
-                    </NuxtLink>
-                    <!-- Item without url → current page (non-link) -->
-                    <span v-else class="breadcrumb__current" aria-current="page">
-                        {{ item.name }}
-                    </span>
-                </li>
+                <BreadcrumbItem v-if="item.url">
+                    <BreadcrumbLink as-child>
+                        <NuxtLink :to="item.url">{{ item.name }}</NuxtLink>
+                    </BreadcrumbLink>
+                </BreadcrumbItem>
+
+                <!-- Item without url → current page -->
+                <BreadcrumbItem v-else>
+                    <BreadcrumbPage>{{ item.name }}</BreadcrumbPage>
+                </BreadcrumbItem>
             </template>
-        </ol>
-    </nav>
+        </BreadcrumbList>
+    </Breadcrumb>
 </template>
 
 <script setup lang="ts">
 import type { SlugRecord } from "~/composables/useSlug";
+import {
+    Breadcrumb,
+    BreadcrumbList,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -46,46 +55,3 @@ defineProps<{
     items: BreadcrumbItem[];
 }>();
 </script>
-
-<style scoped>
-.breadcrumb {
-    padding: 0.5rem 0;
-}
-
-.breadcrumb__list {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 0.875rem;
-}
-
-.breadcrumb__item {
-    display: flex;
-    align-items: center;
-}
-
-.breadcrumb__separator {
-    display: flex;
-    align-items: center;
-    color: #9ca3af;
-    padding: 0 0.25rem;
-}
-
-.breadcrumb__link {
-    color: #3b82f6;
-    text-decoration: none;
-}
-
-.breadcrumb__link:hover {
-    text-decoration: underline;
-}
-
-.breadcrumb__current {
-    color: #374151;
-    font-weight: 500;
-}
-</style>

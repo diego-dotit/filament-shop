@@ -1,33 +1,45 @@
 <template>
-    <div class="cart-item">
-        <div class="cart-item__details">
-            <p class="cart-item__product-name">{{ item.product.name }}</p>
-            <p class="cart-item__variant-sku">{{ item.variant.sku }}</p>
+    <div class="flex items-center gap-4 py-4 border-b border-gray-200">
+        <div class="flex-1">
+            <p class="font-semibold mb-1">{{ item.product.name }}</p>
+            <p class="text-xs text-gray-500">{{ item.variant.sku }}</p>
         </div>
 
-        <div class="cart-item__quantity">
-            <button
-                class="cart-item__qty-btn"
+        <div class="flex items-center gap-2">
+            <Button
+                variant="outline"
+                size="sm"
                 data-testid="decrement"
                 :disabled="item.quantity <= 1"
                 @click="decrement"
             >
                 −
-            </button>
-            <span class="cart-item__qty-value">{{ item.quantity }}</span>
-            <button class="cart-item__qty-btn" data-testid="increment" @click="increment">+</button>
+            </Button>
+            <span class="min-w-8 text-center font-semibold">{{ item.quantity }}</span>
+            <Button variant="outline" size="sm" data-testid="increment" @click="increment">
+                +
+            </Button>
         </div>
 
-        <div class="cart-item__pricing">
-            <p class="cart-item__line-total">${{ item.line_total.toFixed(2) }}</p>
+        <div class="min-w-24 text-right">
+            <p class="font-bold">${{ item.line_total.toFixed(2) }}</p>
         </div>
 
-        <button class="cart-item__remove" data-testid="remove" @click="remove">Remove</button>
+        <Button
+            variant="ghost"
+            size="sm"
+            data-testid="remove"
+            class="text-red-500 hover:text-red-700"
+            @click="remove"
+        >
+            Remove
+        </Button>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { CartItem } from "../composables/useCart";
+import type { CartItem } from "~/composables/useCart";
+import { Button } from "@/components/ui/button";
 
 const props = defineProps<{
     item: CartItem;
@@ -35,96 +47,29 @@ const props = defineProps<{
 
 const { updateItemQuantity, removeItem } = useCart();
 
-function increment() {
-    updateItemQuantity(props.item.id, props.item.quantity + 1);
-}
-
-function decrement() {
-    if (props.item.quantity > 1) {
-        updateItemQuantity(props.item.id, props.item.quantity - 1);
+async function increment() {
+    try {
+        await updateItemQuantity(props.item.id, props.item.quantity + 1);
+    } catch (err: unknown) {
+        console.error("Failed to update cart item quantity:", err);
     }
 }
 
-function remove() {
-    removeItem(props.item.id);
+async function decrement() {
+    if (props.item.quantity > 1) {
+        try {
+            await updateItemQuantity(props.item.id, props.item.quantity - 1);
+        } catch (err: unknown) {
+            console.error("Failed to update cart item quantity:", err);
+        }
+    }
+}
+
+async function remove() {
+    try {
+        await removeItem(props.item.id);
+    } catch (err: unknown) {
+        console.error("Failed to remove cart item:", err);
+    }
 }
 </script>
-
-<style scoped>
-.cart-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 0;
-    border-bottom: 1px solid #eee;
-}
-
-.cart-item__details {
-    flex: 1;
-}
-
-.cart-item__product-name {
-    font-weight: 600;
-    margin: 0 0 0.25rem;
-}
-
-.cart-item__variant-sku {
-    font-size: 0.85rem;
-    color: #888;
-    margin: 0;
-}
-
-.cart-item__quantity {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.cart-item__qty-btn {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #ccc;
-    background: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cart-item__qty-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.cart-item__qty-value {
-    min-width: 2rem;
-    text-align: center;
-    font-weight: 600;
-}
-
-.cart-item__pricing {
-    min-width: 6rem;
-    text-align: right;
-}
-
-.cart-item__line-total {
-    font-weight: 700;
-    margin: 0;
-}
-
-.cart-item__remove {
-    background: transparent;
-    border: none;
-    color: #e94560;
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0.25rem 0.5rem;
-    text-decoration: underline;
-}
-
-.cart-item__remove:hover {
-    color: #c73350;
-}
-</style>

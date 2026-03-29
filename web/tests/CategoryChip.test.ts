@@ -279,4 +279,53 @@ describe("CategoryChip component", () => {
 
         expect(wrapper.find("a").exists()).toBe(true);
     });
+
+    // -----------------------------------------------------------------------
+    // shadcn Badge migration — no BEM classes, Badge styling applied
+    // -----------------------------------------------------------------------
+
+    it("does not use BEM class 'category-chip' in rendered output", async () => {
+        const { default: CategoryChip } = await import("../components/CategoryChip.vue");
+        const wrapper = mount(CategoryChip, {
+            props: { category: makeCategoryNoSlugs() },
+            global: { stubs: globalStubs },
+        });
+
+        expect(wrapper.html()).not.toContain("category-chip");
+    });
+
+    it("renders a Badge element with rounded-full class (outline variant)", async () => {
+        const { default: CategoryChip } = await import("../components/CategoryChip.vue");
+        const wrapper = mount(CategoryChip, {
+            props: { category: makeCategoryNoSlugs() },
+            global: { stubs: globalStubs },
+        });
+
+        // Badge variant cva always includes 'rounded-full'
+        const badgeEl = wrapper.find(".rounded-full");
+        expect(badgeEl.exists()).toBe(true);
+    });
+
+    it("renders a Badge element with 'border' class from outline variant", async () => {
+        const { default: CategoryChip } = await import("../components/CategoryChip.vue");
+        const wrapper = mount(CategoryChip, {
+            props: { category: makeCategoryNoSlugs() },
+            global: { stubs: globalStubs },
+        });
+
+        // Badge base class always includes 'border'
+        const badgeEl = wrapper.find(".border");
+        expect(badgeEl.exists()).toBe(true);
+    });
+
+    it("category name is displayed inside the Badge element", async () => {
+        const { default: CategoryChip } = await import("../components/CategoryChip.vue");
+        const wrapper = mount(CategoryChip, {
+            props: { category: makeCategoryNoSlugs() },
+            global: { stubs: globalStubs },
+        });
+
+        const badgeEl = wrapper.find(".rounded-full");
+        expect(badgeEl.text()).toContain("PLA Filaments");
+    });
 });

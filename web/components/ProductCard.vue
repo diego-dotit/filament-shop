@@ -1,20 +1,21 @@
 <template>
-    <article class="product-card">
-        <NuxtLink :to="productUrl" class="product-card__link">
-            <div class="product-card__image-wrapper">
-                <img :src="imageSrc" :alt="product.name" class="product-card__image" />
+    <Card class="overflow-hidden hover:shadow-lg transition-shadow">
+        <NuxtLink :to="productUrl" class="block no-underline text-inherit">
+            <div class="aspect-square bg-gray-100 overflow-hidden">
+                <img :src="imageSrc" :alt="product.name" class="w-full h-full object-cover" />
             </div>
-            <div class="product-card__body">
-                <h2 class="product-card__name">{{ product.name }}</h2>
-                <p class="product-card__price">${{ lowestPrice }}</p>
-            </div>
+            <CardContent class="pt-4">
+                <h2 class="text-base font-semibold mb-2">{{ product.name }}</h2>
+                <p class="text-sm text-gray-700">${{ lowestPrice }}</p>
+            </CardContent>
         </NuxtLink>
-    </article>
+    </Card>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ProductResource } from "~/composables/useProducts";
+import { Card, CardContent } from "@/components/ui/card";
 
 const PLACEHOLDER = "/images/placeholder.png";
 
@@ -31,7 +32,7 @@ const imageSrc = computed<string>(() =>
 const lowestPrice = computed<string>(() => {
     const variants = props.product.variants;
     if (!variants || variants.length === 0) {
-        return props.product.price;
+        return Number(props.product.price).toFixed(2);
     }
 
     let min = Infinity;
@@ -44,49 +45,9 @@ const lowestPrice = computed<string>(() => {
     }
 
     if (min === Infinity) {
-        return props.product.price;
+        return Number(props.product.price).toFixed(2);
     }
 
     return min.toFixed(2);
 });
 </script>
-
-<style scoped>
-.product-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    transition: box-shadow 0.2s;
-}
-.product-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-.product-card__link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-}
-.product-card__image-wrapper {
-    aspect-ratio: 1;
-    background: #f3f4f6;
-    overflow: hidden;
-}
-.product-card__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.product-card__body {
-    padding: 1rem;
-}
-.product-card__name {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem;
-}
-.product-card__price {
-    font-size: 0.95rem;
-    color: #374151;
-    margin: 0;
-}
-</style>

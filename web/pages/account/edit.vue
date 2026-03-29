@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from "vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 // Protect this route — unauthenticated visitors are redirected by the middleware.
 definePageMeta({ middleware: "auth" });
@@ -25,6 +29,7 @@ watch(isAuthenticated, (authenticated) => {
 
 const successMessage = ref<string | null>(null);
 const errorMessage = ref<string | null>(null);
+const submitting = ref(false);
 
 // Pre-fill form from current user on mount
 const form = reactive({
@@ -43,6 +48,7 @@ function cancel(): void {
 async function submitEdit(): Promise<void> {
     successMessage.value = null;
     errorMessage.value = null;
+    submitting.value = true;
     try {
         const response = await api<{ data: Record<string, unknown> }>("/customers/me", {
             method: "PUT",
@@ -72,29 +78,40 @@ async function submitEdit(): Promise<void> {
             errorMessage.value =
                 error?.data?.message ?? error?.message ?? "An error occurred. Please try again.";
         }
+    } finally {
+        submitting.value = false;
     }
 }
 </script>
 
 <template>
-    <div class="account-edit">
-        <h1>Edit Profile</h1>
+    <div class="mx-auto max-w-md w-full px-4 py-8">
+        <h1 class="text-2xl font-semibold mb-6">Edit Profile</h1>
 
         <!-- Success message -->
-        <p v-if="successMessage" data-testid="success-msg" class="success-message">
-            {{ successMessage }}
-        </p>
+        <Alert
+            v-if="successMessage"
+            data-testid="success-msg"
+            class="mb-4"
+        >
+            <AlertDescription>{{ successMessage }}</AlertDescription>
+        </Alert>
 
         <!-- Error message -->
-        <p v-if="errorMessage" data-testid="error-msg" class="error-message">
-            {{ errorMessage }}
-        </p>
+        <Alert
+            v-if="errorMessage"
+            data-testid="error-msg"
+            variant="destructive"
+            class="mb-4"
+        >
+            <AlertDescription>{{ errorMessage }}</AlertDescription>
+        </Alert>
 
         <!-- Edit form -->
-        <form data-testid="edit-form" @submit.prevent="submitEdit">
-            <div>
-                <label for="first-name">First Name</label>
-                <input
+        <form data-testid="edit-form" class="flex flex-col gap-4" @submit.prevent="submitEdit">
+            <div class="flex flex-col gap-1.5">
+                <Label for="first-name">First Name</Label>
+                <Input
                     id="first-name"
                     v-model="form.first_name"
                     data-testid="input-first-name"
@@ -104,9 +121,9 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div>
-                <label for="last-name">Last Name</label>
-                <input
+            <div class="flex flex-col gap-1.5">
+                <Label for="last-name">Last Name</Label>
+                <Input
                     id="last-name"
                     v-model="form.last_name"
                     data-testid="input-last-name"
@@ -116,9 +133,9 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div>
-                <label for="email">Email</label>
-                <input
+            <div class="flex flex-col gap-1.5">
+                <Label for="email">Email</Label>
+                <Input
                     id="email"
                     v-model="form.email"
                     data-testid="input-email"
@@ -128,9 +145,9 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div>
-                <label for="phone">Phone</label>
-                <input
+            <div class="flex flex-col gap-1.5">
+                <Label for="phone">Phone</Label>
+                <Input
                     id="phone"
                     v-model="form.phone"
                     data-testid="input-phone"
@@ -140,9 +157,16 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div class="form-actions">
-                <button type="submit">Save</button>
-                <button data-testid="cancel-btn" type="button" @click="cancel">Cancel</button>
+            <div class="flex gap-3 mt-2">
+                <Button data-testid="submit-btn" type="submit" :disabled="submitting">Save</Button>
+                <Button
+                    data-testid="cancel-btn"
+                    type="button"
+                    variant="outline"
+                    @click="cancel"
+                >
+                    Cancel
+                </Button>
             </div>
         </form>
     </div>

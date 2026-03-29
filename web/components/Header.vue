@@ -1,64 +1,84 @@
 <template>
-    <header class="site-header">
-        <div class="site-header__inner">
+    <header class="sticky top-0 z-50 bg-slate-900 text-white shadow-md">
+        <div class="flex items-center gap-6 max-w-7xl mx-auto px-6 py-3">
             <!-- Brand / Home -->
-            <NuxtLink to="/" class="site-header__brand">Filament Shop</NuxtLink>
+            <NuxtLink to="/" class="text-rose-500 font-bold text-xl mr-auto no-underline hover:text-rose-400 transition-colors">
+                Filament Shop
+            </NuxtLink>
 
             <!-- Primary navigation -->
-            <nav class="site-header__nav">
-                <NuxtLink to="/">Home</NuxtLink>
-                <NuxtLink to="/categories">Categories</NuxtLink>
-                <NuxtLink to="/cart" class="site-header__cart">
+            <nav class="flex gap-5">
+                <NuxtLink to="/" class="text-slate-300 hover:text-white text-sm transition-colors no-underline">
+                    Home
+                </NuxtLink>
+                <NuxtLink to="/categories" class="text-slate-300 hover:text-white text-sm transition-colors no-underline">
+                    Categories
+                </NuxtLink>
+                <NuxtLink to="/cart" class="flex items-center gap-1.5 text-slate-300 hover:text-white text-sm transition-colors no-underline">
                     Cart
-                    <span v-if="itemCount > 0" class="site-header__cart-count">{{
-                        itemCount
-                    }}</span>
-                    <span v-else class="site-header__cart-count">0</span>
+                    <Badge class="bg-rose-500 text-white hover:bg-rose-500 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full text-xs font-semibold">
+                        {{ itemCount }}
+                    </Badge>
                 </NuxtLink>
             </nav>
 
             <!-- Localization controls -->
-            <div class="site-header__locale">
-                <select
-                    class="site-header__select"
-                    :value="language"
-                    aria-label="Language"
-                    @change="
-                        setLanguage(
-                            ($event.target as HTMLSelectElement).value as 'en' | 'fr' | 'es'
-                        )
-                    "
-                >
-                    <option v-for="lang in availableLanguages" :key="lang" :value="lang">
-                        {{ lang.toUpperCase() }}
-                    </option>
-                </select>
+            <div class="flex items-center gap-2">
+                <Select :model-value="language" @update:model-value="(val) => setLanguage(val as 'en' | 'fr' | 'es')">
+                    <SelectTrigger class="w-20 h-8 text-xs bg-slate-800 border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white focus:ring-0">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent class="bg-slate-800 border-slate-600 text-slate-300">
+                        <SelectItem
+                            v-for="lang in availableLanguages"
+                            :key="lang"
+                            :value="lang"
+                            class="text-xs hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                        >
+                            {{ lang.toUpperCase() }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
 
-                <select
-                    class="site-header__select"
-                    :value="currency"
-                    aria-label="Currency"
-                    @change="
-                        setCurrency(
-                            ($event.target as HTMLSelectElement).value as 'USD' | 'EUR' | 'GBP'
-                        )
-                    "
-                >
-                    <option v-for="curr in availableCurrencies" :key="curr" :value="curr">
-                        {{ curr }}
-                    </option>
-                </select>
+                <Select :model-value="currency" @update:model-value="(val) => setCurrency(val as 'USD' | 'EUR' | 'GBP')">
+                    <SelectTrigger class="w-20 h-8 text-xs bg-slate-800 border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white focus:ring-0">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent class="bg-slate-800 border-slate-600 text-slate-300">
+                        <SelectItem
+                            v-for="curr in availableCurrencies"
+                            :key="curr"
+                            :value="curr"
+                            class="text-xs hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                        >
+                            {{ curr }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             <!-- Auth controls -->
-            <div class="site-header__auth">
+            <div class="flex items-center gap-4">
                 <template v-if="isAuthenticated">
-                    <NuxtLink to="/account">My Account</NuxtLink>
-                    <button class="site-header__logout" @click="logout">Logout</button>
+                    <NuxtLink to="/account" class="text-slate-300 hover:text-white text-sm transition-colors no-underline">
+                        My Account
+                    </NuxtLink>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="border-rose-500 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"
+                        @click="logout"
+                    >
+                        Logout
+                    </Button>
                 </template>
                 <template v-else>
-                    <NuxtLink to="/login">Login</NuxtLink>
-                    <NuxtLink to="/register">Register</NuxtLink>
+                    <NuxtLink to="/login" class="text-slate-300 hover:text-white text-sm transition-colors no-underline">
+                        Login
+                    </NuxtLink>
+                    <NuxtLink to="/register" class="text-slate-300 hover:text-white text-sm transition-colors no-underline">
+                        Register
+                    </NuxtLink>
                 </template>
             </div>
         </div>
@@ -66,119 +86,18 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+
 const { isAuthenticated, logout } = useAuth();
 const { itemCount } = useCart();
 const { language, currency, availableLanguages, availableCurrencies, setLanguage, setCurrency } =
     useLocalization();
 </script>
-
-<style scoped>
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #1a1a2e;
-    color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.site-header__inner {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.75rem 1.5rem;
-}
-
-.site-header__brand {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #e94560;
-    text-decoration: none;
-    margin-right: auto;
-}
-
-.site-header__nav {
-    display: flex;
-    gap: 1.25rem;
-}
-
-.site-header__nav a,
-.site-header__auth a {
-    color: #ccc;
-    text-decoration: none;
-    font-size: 0.95rem;
-    transition: color 0.15s;
-}
-
-.site-header__nav a:hover,
-.site-header__auth a:hover {
-    color: #fff;
-}
-
-.site-header__cart {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.site-header__cart-count {
-    background: #e94560;
-    color: #fff;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    min-width: 1.25rem;
-    height: 1.25rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0.3rem;
-}
-
-.site-header__locale {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.site-header__select {
-    background: #16213e;
-    border: 1px solid #444;
-    color: #ccc;
-    border-radius: 4px;
-    padding: 0.25rem 0.4rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-
-.site-header__select:hover {
-    border-color: #888;
-    color: #fff;
-}
-
-.site-header__auth {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.site-header__logout {
-    background: transparent;
-    border: 1px solid #e94560;
-    color: #e94560;
-    border-radius: 4px;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition:
-        background 0.15s,
-        color 0.15s;
-}
-
-.site-header__logout:hover {
-    background: #e94560;
-    color: #fff;
-}
-</style>

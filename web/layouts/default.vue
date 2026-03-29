@@ -1,7 +1,7 @@
 <template>
-    <div class="layout">
+    <div class="flex flex-col min-h-screen font-sans">
         <Header />
-        <main class="layout__content">
+        <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
             <slot />
         </main>
         <Footer />
@@ -9,34 +9,3 @@
 </template>
 
 <script setup lang="ts"></script>
-
-<style>
-/* Global reset to ensure full-height flex layout */
-html,
-body,
-#__nuxt {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-</style>
-
-<style scoped>
-.layout {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    font-family:
-        system-ui,
-        -apple-system,
-        sans-serif;
-}
-
-.layout__content {
-    flex: 1;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
-}
-</style>

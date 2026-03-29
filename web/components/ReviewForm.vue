@@ -2,7 +2,7 @@
     <!-- Already reviewed: show message instead of form -->
     <div
         v-if="isAuthenticated && alreadyReviewed"
-        class="review-form__already-reviewed"
+        class="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground"
         data-testid="already-reviewed"
     >
         <p>You have already submitted a review for this product.</p>
@@ -11,7 +11,7 @@
     <!-- Success state: show confirmation, hide form -->
     <div
         v-else-if="submitted"
-        class="review-form__success"
+        class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
         role="alert"
         data-testid="review-success"
     >
@@ -21,78 +21,76 @@
     <!-- Form: only for authenticated users who have not yet reviewed -->
     <form
         v-else-if="isAuthenticated"
-        class="review-form"
+        class="flex flex-col gap-4"
         data-testid="review-form"
         @submit.prevent="handleSubmit"
     >
-        <h3 class="review-form__title">Write a Review</h3>
+        <h3 class="text-lg font-semibold">Write a Review</h3>
 
         <!-- Star Rating -->
-        <div class="review-form__rating" role="group" aria-label="Rating">
-            <label class="review-form__label"
-                >Rating <span class="review-form__required">*</span></label
-            >
-            <div class="review-form__stars">
-                <button
+        <div class="flex flex-col gap-2" role="group" aria-label="Rating">
+            <label class="font-medium">Rating <span class="text-red-500">*</span></label>
+            <div class="flex gap-1">
+                <Button
                     v-for="star in 5"
                     :key="star"
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     :data-testid="`star-${star}`"
                     :aria-label="`Rate ${star} out of 5`"
-                    class="review-form__star"
-                    :class="{ 'review-form__star--active': rating >= star }"
+                    :class="{ 'text-yellow-400': rating >= star }"
                     @click="rating = star"
                 >
                     {{ rating >= star ? "★" : "☆" }}
-                </button>
+                </Button>
             </div>
-            <p v-if="ratingError" class="review-form__error" role="alert">{{ ratingError }}</p>
+            <p v-if="ratingError" class="text-sm text-red-500" role="alert">{{ ratingError }}</p>
         </div>
 
         <!-- Comment -->
-        <div class="review-form__comment-group">
-            <label for="review-comment" class="review-form__label">Comment (optional)</label>
-            <textarea
+        <div class="flex flex-col gap-2">
+            <label for="review-comment" class="font-medium">Comment (optional)</label>
+            <Textarea
                 id="review-comment"
                 v-model="comment"
-                class="review-form__textarea"
-                :class="{ 'review-form__textarea--error': commentTooLong }"
+                :class="{ 'border-red-500': commentTooLong }"
                 rows="4"
-                maxlength="501"
+                maxlength="500"
                 placeholder="Share your experience..."
             />
             <p
-                class="review-form__char-count"
-                :class="{ 'review-form__char-count--over': commentTooLong }"
+                class="text-xs mt-1"
+                :class="{ 'text-red-500': commentTooLong, 'text-gray-500': !commentTooLong }"
             >
                 {{ comment.length }} / 500
             </p>
-            <p v-if="commentTooLong" class="review-form__error" role="alert">
+            <p v-if="commentTooLong" class="text-sm text-red-500" role="alert">
                 Comment must not exceed 500 characters.
             </p>
         </div>
 
         <!-- Submission error -->
-        <p v-if="submitError" class="review-form__error review-form__error--submit" role="alert">
+        <p v-if="submitError" class="text-sm text-red-500" role="alert">
             {{ submitError }}
         </p>
 
         <!-- Submit button -->
-        <button
+        <Button
             data-testid="submit-review"
             type="button"
-            class="review-form__submit"
             :disabled="submitting"
             @click="handleSubmit"
         >
-            <span v-if="submitting">Submitting...</span>
-            <span v-else>Submit Review</span>
-        </button>
+            {{ submitting ? "Submitting..." : "Submit Review" }}
+        </Button>
     </form>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 // ---------------------------------------------------------------------------
 // Props
