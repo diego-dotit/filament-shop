@@ -1,20 +1,18 @@
 <template>
     <NuxtLayout>
-        <div class="min-h-screen flex items-center justify-center px-4">
-            <Card class="w-full max-w-md">
-                <CardContent class="pt-6 text-center">
-                    <h1 class="text-6xl font-bold text-gray-500 mb-2">
+        <div>
+            <Card>
+                <CardContent>
+                    <h1>
                         {{ error?.statusCode ?? "Error" }}
                     </h1>
-                    <h2 class="text-2xl font-semibold mb-4">{{ title }}</h2>
-                    <p class="text-gray-600 mb-6">{{ description }}</p>
-                    <div class="flex flex-col gap-3 sm:flex-row">
-                        <Button class="flex-1" as-child>
+                    <h2>{{ title }}</h2>
+                    <p>{{ description }}</p>
+                    <div>
+                        <Button as-child>
                             <NuxtLink to="/">Go Home</NuxtLink>
                         </Button>
-                        <Button class="flex-1" variant="outline" @click="handleBack">
-                            Go Back
-                        </Button>
+                        <Button variant="outline" @click="handleBack"> Go Back </Button>
                     </div>
                 </CardContent>
             </Card>

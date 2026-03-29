@@ -1,7 +1,7 @@
 <template>
-    <div class="flex flex-col min-h-screen font-sans">
+    <div>
         <Header />
-        <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+        <main>
             <slot />
         </main>
         <Footer />
