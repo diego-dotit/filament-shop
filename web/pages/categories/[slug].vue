@@ -1,52 +1,42 @@
 <template>
-    <div class="category-page">
-        <!-- Back link to homepage + full breadcrumb path -->
-        <nav class="category-page__breadcrumb">
-            <NuxtLink to="/">Home</NuxtLink>
-            <template v-if="category">
-                <template v-if="category.parent">
-                    <span class="category-page__breadcrumb-sep"> → </span>
-                    <NuxtLink :to="'/' + category.parent.slug">{{ category.parent.name }}</NuxtLink>
-                </template>
-                <span class="category-page__breadcrumb-sep"> → </span>
-                <span>{{ category.name }}</span>
-            </template>
-        </nav>
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Breadcrumb navigation -->
+        <Breadcrumb :items="breadcrumbItems" class="mb-6" />
 
         <!-- Error state -->
-        <div v-if="notFound" class="category-page__error">
-            <p>
+        <div v-if="notFound" data-testid="category-error" class="py-12 text-center">
+            <p class="text-gray-600">
                 Category not found. Please check the URL or go back to the
-                <NuxtLink to="/">homepage</NuxtLink>.
+                <NuxtLink to="/" class="underline text-primary">homepage</NuxtLink>.
             </p>
         </div>
 
         <!-- Loading state -->
-        <div v-else-if="loading" class="category-page__loading">
-            <p>Loading…</p>
+        <div v-else-if="loading" data-testid="category-loading" class="py-12 text-center">
+            <p class="text-gray-500">Loading…</p>
         </div>
 
         <!-- Category content -->
         <template v-else-if="category">
             <!-- Category header -->
-            <header class="category-page__header">
+            <header class="mb-8">
                 <img
                     v-if="category.image"
                     :src="category.image"
                     :alt="category.name"
-                    class="category-page__image"
+                    class="w-full max-h-64 object-cover rounded-lg mb-4"
                 />
-                <h1 class="category-page__title">{{ category.name }}</h1>
+                <h1 class="text-3xl font-bold">{{ category.name }}</h1>
             </header>
 
             <!-- Subcategories -->
             <section
                 v-if="category.children && category.children.length > 0"
-                class="category-page__subcategories"
+                class="mb-8"
                 data-testid="subcategories"
             >
-                <h2 class="category-page__subcategories-title">Subcategories</h2>
-                <div class="category-page__subcategories-list">
+                <h2 class="text-lg font-semibold mb-3">Subcategories</h2>
+                <div class="flex flex-wrap gap-2">
                     <CategoryChip
                         v-for="child in category.children"
                         :key="child.id"
@@ -58,31 +48,47 @@
             </section>
 
             <!-- Products grid -->
-            <section class="category-page__products">
-                <div class="product-grid">
+            <section class="mb-8" data-testid="products-section">
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
                     <ProductCard v-for="product in products" :key="product.id" :product="product" />
                 </div>
             </section>
 
             <!-- Pagination -->
-            <nav v-if="totalPages > 1" class="category-page__pagination" data-testid="pagination">
-                <button :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">
+            <nav
+                v-if="totalPages > 1"
+                class="flex items-center justify-center gap-4"
+                data-testid="pagination"
+            >
+                <Button
+                    variant="outline"
+                    :disabled="currentPage <= 1"
+                    @click="goToPage(currentPage - 1)"
+                >
                     Previous
-                </button>
+                </Button>
 
-                <span>Page {{ currentPage }} of {{ totalPages }}</span>
+                <span class="text-sm text-gray-500">Page {{ currentPage }} of {{ totalPages }}</span>
 
-                <button :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">
+                <Button
+                    variant="outline"
+                    :disabled="currentPage >= totalPages"
+                    @click="goToPage(currentPage + 1)"
+                >
                     Next
-                </button>
+                </Button>
             </nav>
         </template>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+definePageMeta({ ssr: false });
+import { ref, computed, onMounted } from "vue";
 import type { CategoryResource } from "~/composables/useCategories";
+import Breadcrumb from "@/components/Breadcrumb.vue";
+import { Button } from "@/components/ui/button";
+import type { BreadcrumbItem } from "@/components/Breadcrumb.vue";
 
 // ---------------------------------------------------------------------------
 // State
@@ -99,6 +105,34 @@ const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(true);
 const notFound = ref(false);
+
+// ---------------------------------------------------------------------------
+// Computed
+// ---------------------------------------------------------------------------
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+    if (!category.value) return [];
+
+    const items: BreadcrumbItem[] = [];
+
+    if (category.value.parent) {
+        items.push({
+            id: category.value.parent.id,
+            name: category.value.parent.name,
+            slugs: [],
+            url: `/${category.value.parent.slug}`,
+        });
+    }
+
+    items.push({
+        id: category.value.id,
+        name: category.value.name,
+        slugs: category.value.slugs ?? [],
+        // No url — this is the current page (renders as non-link)
+    });
+
+    return items;
+});
 
 // ---------------------------------------------------------------------------
 // Data fetching

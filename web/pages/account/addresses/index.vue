@@ -1,56 +1,75 @@
 <template>
-    <div class="account-addresses">
-        <div class="page-header">
-            <h1>My Addresses</h1>
-            <NuxtLink to="/account/addresses/new" class="btn-add">Add New Address</NuxtLink>
+    <div class="max-w-2xl mx-auto my-8 px-6">
+        <!-- Page header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">My Addresses</h1>
+            <Button as-child>
+                <NuxtLink to="/account/addresses/new">Add New Address</NuxtLink>
+            </Button>
         </div>
 
         <!-- Loading state -->
-        <div v-if="loading" class="loading">Loading addresses…</div>
+        <div v-if="loading" class="text-gray-500">Loading addresses…</div>
 
         <!-- Error state -->
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <Alert v-else-if="error" variant="destructive">
+            <AlertDescription>{{ error }}</AlertDescription>
+        </Alert>
 
         <!-- Empty state -->
-        <div v-else-if="addresses.length === 0" class="empty-state">
+        <div v-else-if="addresses.length === 0" class="text-center py-12 text-gray-500">
             <p>No saved addresses</p>
-            <NuxtLink to="/account/addresses/new">Add your first address</NuxtLink>
+            <NuxtLink to="/account/addresses/new" class="mt-3 inline-block text-primary underline">
+                Add your first address
+            </NuxtLink>
         </div>
 
         <!-- Address list -->
-        <ul v-else class="addresses-list">
-            <li v-for="address in addresses" :key="address.id" class="address-item">
-                <div class="address-details">
-                    <p class="address-line">{{ address.address_line_1 }}</p>
-                    <p v-if="address.address_line_2" class="address-line">{{ address.address_line_2 }}</p>
-                    <p class="address-line">{{ address.city }}, {{ address.postcode }}</p>
-                    <p class="address-line">{{ address.country }}</p>
-                </div>
-                <div class="address-actions">
-                    <NuxtLink
-                        :to="`/account/addresses/${address.id}/edit`"
-                        class="btn-edit"
-                        data-testid="edit-address"
-                    >
-                        Edit
-                    </NuxtLink>
-                    <button
-                        class="btn-delete"
-                        data-testid="delete-address"
-                        @click="handleDelete(address.id)"
-                    >
-                        Delete
-                    </button>
-                </div>
-            </li>
-        </ul>
+        <div v-else class="flex flex-col gap-4">
+            <Card v-for="address in addresses" :key="address.id">
+                <CardContent class="flex items-start justify-between gap-4 pt-6">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-700 leading-relaxed">{{ address.address_line_1 }}</p>
+                        <p v-if="address.address_line_2" class="text-sm text-gray-700 leading-relaxed">
+                            {{ address.address_line_2 }}
+                        </p>
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            {{ address.city }}, {{ address.postcode }}
+                        </p>
+                        <p class="text-sm text-gray-700 leading-relaxed">{{ address.country }}</p>
+                    </div>
+                    <div class="flex gap-2 items-center flex-shrink-0">
+                        <Button
+                            as-child
+                            variant="outline"
+                            size="sm"
+                            data-testid="edit-address"
+                        >
+                            <NuxtLink :to="`/account/addresses/${address.id}/edit`">Edit</NuxtLink>
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            data-testid="delete-address"
+                            :disabled="deletingId === address.id"
+                            @click="handleDelete(address.id)"
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { CustomerAddress } from "~/composables/useCheckout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: "auth", ssr: false });
 
 const { isAuthenticated } = useAuth();
 
@@ -62,6 +81,7 @@ const api = useApi();
 const addresses = ref<CustomerAddress[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const deletingId = ref<number | null>(null);
 
 onMounted(async () => {
     if (!isAuthenticated.value) return;
@@ -84,138 +104,14 @@ async function handleDelete(id: number): Promise<void> {
         return;
     }
 
+    deletingId.value = id;
     try {
         await api(`/customers/me/addresses/${id}`, { method: "DELETE" });
         addresses.value = addresses.value.filter((a) => a.id !== id);
     } catch {
         error.value = "Failed to delete address";
+    } finally {
+        deletingId.value = null;
     }
 }
 </script>
-
-<style scoped>
-.account-addresses {
-    max-width: 640px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-}
-
-.page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-}
-
-.page-header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-}
-
-.btn-add {
-    padding: 0.5rem 1rem;
-    background: #2563eb;
-    color: #fff;
-    border-radius: 0.375rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-decoration: none;
-}
-
-.btn-add:hover {
-    background: #1d4ed8;
-}
-
-.loading {
-    color: #6b7280;
-    font-size: 1rem;
-}
-
-.error {
-    color: #b91c1c;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 0.375rem;
-    padding: 0.75rem 1rem;
-}
-
-.empty-state {
-    color: #6b7280;
-    text-align: center;
-    padding: 2rem 0;
-}
-
-.empty-state a {
-    display: inline-block;
-    margin-top: 0.75rem;
-    color: #2563eb;
-    text-decoration: underline;
-}
-
-.addresses-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.address-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    background: #fff;
-}
-
-.address-details {
-    flex: 1;
-}
-
-.address-line {
-    margin: 0;
-    font-size: 0.95rem;
-    color: #374151;
-    line-height: 1.5;
-}
-
-.address-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.btn-edit {
-    padding: 0.375rem 0.75rem;
-    background: #f3f4f6;
-    color: #374151;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-decoration: none;
-}
-
-.btn-edit:hover {
-    background: #e5e7eb;
-}
-
-.btn-delete {
-    padding: 0.375rem 0.75rem;
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fca5a5;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.btn-delete:hover {
-    background: #fee2e2;
-}
-</style>

@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     devtools: { enabled: true },
+    css: ["~/assets/css/globals.css"],
 
     runtimeConfig: {
         // Server-only secrets go here (not exposed to the client)
@@ -31,7 +32,18 @@ export default defineNuxtConfig({
         strict: true,
     },
 
-    vite: {
-        // Vite is the default bundler for Nuxt 3 — no extra configuration needed
+    postcss: {
+        plugins: {
+            "@tailwindcss/postcss": {},
+        },
+    },
+
+    components: {
+        dirs: [
+            {
+                path: "~/components",
+                extensions: ["vue"],
+            },
+        ],
     },
 });

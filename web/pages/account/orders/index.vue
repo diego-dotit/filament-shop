@@ -1,36 +1,53 @@
 <template>
-    <div class="account-orders">
-        <h1>My Orders</h1>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">My Orders</h1>
 
         <!-- Loading state -->
-        <div v-if="loading" class="loading">Loading orders…</div>
+        <div v-if="loading" class="text-gray-500">Loading orders…</div>
 
         <!-- Error state -->
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <Alert v-else-if="error" variant="destructive">
+            <AlertDescription>{{ error }}</AlertDescription>
+        </Alert>
 
         <!-- Empty state -->
-        <div v-else-if="orders.length === 0" class="empty-state">
-            <p>You haven't placed any orders yet</p>
-            <NuxtLink to="/">Browse products</NuxtLink>
+        <div v-else-if="orders.length === 0" class="text-center py-12">
+            <p class="text-gray-500 mb-4">You haven't placed any orders yet</p>
+            <NuxtLink to="/" class="text-blue-600 hover:underline">Browse products</NuxtLink>
         </div>
 
         <!-- Order list -->
-        <ul v-else class="orders-list">
-            <li v-for="order in orders" :key="order.id" class="order-item">
-                <NuxtLink :to="`/account/orders/${order.id}`" class="order-link">
-                    <span class="order-id">#{{ order.id }}</span>
-                    <span class="order-date">{{ formatDate(order.created_at) }}</span>
-                    <span class="order-status">{{ order.status }}</span>
-                    <span class="order-total">{{ order.total_amount }}</span>
-                </NuxtLink>
-            </li>
-        </ul>
+        <Table v-else>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Total</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <TableRow v-for="order in orders" :key="order.id">
+                    <TableCell>
+                        <NuxtLink :to="`/account/orders/${order.id}`" class="text-blue-600 hover:underline">
+                            #{{ order.id }}
+                        </NuxtLink>
+                    </TableCell>
+                    <TableCell>{{ formatDate(order.created_at) }}</TableCell>
+                    <TableCell>{{ order.status }}</TableCell>
+                    <TableCell>{{ order.total_amount }}</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
     </div>
 </template>
 
 <script setup lang="ts">
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 // Protect this route — unauthenticated visitors are redirected by the middleware.
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: "auth", ssr: false });
 
 const { isAuthenticated } = useAuth();
 const { orders, loading, error, fetchOrders } = useOrders();

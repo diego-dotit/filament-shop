@@ -1,7 +1,7 @@
 <template>
-    <div class="checkout-page">
+    <div class="max-w-4xl mx-auto px-6 py-8">
         <!-- Order Confirmation -->
-        <section v-if="orderConfirmation" class="confirmation">
+        <section v-if="orderConfirmation" class="flex flex-col gap-6">
             <OrderConfirmation
                 :order-id="orderConfirmation.id"
                 :total-amount="orderConfirmation.total_amount"
@@ -11,191 +11,184 @@
 
         <!-- Checkout Form -->
         <section v-else class="checkout-form">
-            <h1>Checkout</h1>
+            <h1 class="text-2xl font-bold mb-6">Checkout</h1>
 
             <!-- ── Logged-in user: address selection ──────────────────────── -->
             <!-- T2.6: add v-else here for guest checkout flow -->
             <template v-if="isAuthenticated">
                 <!-- Loading addresses -->
-                <p v-if="loadingAddresses" class="loading-text">Loading addresses…</p>
+                <p v-if="loadingAddresses" class="text-muted-foreground italic">Loading addresses…</p>
 
                 <!-- No addresses -->
-                <div v-else-if="addresses.length === 0" class="no-addresses">
+                <div v-else-if="addresses.length === 0" class="flex flex-col gap-4">
                     <p>No saved addresses found. Please add an address to continue.</p>
-                    <NuxtLink
-                        :to="'/account/addresses/new?redirect=/checkout'"
-                        class="btn btn-primary"
-                    >
-                        Add Address
-                    </NuxtLink>
+                    <Button as-child class="self-start">
+                        <NuxtLink :to="'/account/addresses/new?redirect=/checkout'">Add Address</NuxtLink>
+                    </Button>
                 </div>
 
                 <!-- Address selection -->
-                <div v-else class="address-selection">
+                <div v-else class="flex flex-col gap-8" data-testid="address-selection">
                     <!-- Billing Address -->
-                    <fieldset class="address-fieldset">
-                        <legend>Billing Address</legend>
-                        <div
-                            v-for="address in addresses"
-                            :key="`billing-${address.id}`"
-                            class="address-option"
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">Billing Address</h3>
+                        <RadioGroup
+                            :model-value="String(billingAddressId)"
+                            @update:model-value="(v) => selectBillingAddress(Number(v))"
                         >
-                            <label :for="`billing-address-${address.id}`">
-                                <input
-                                    :id="`billing-address-${address.id}`"
-                                    type="radio"
-                                    name="billing_address"
-                                    :value="address.id"
-                                    :checked="billingAddressId === address.id"
-                                    @change="selectBillingAddress(address.id)"
+                            <div
+                                v-for="address in addresses"
+                                :key="`billing-${address.id}`"
+                                class="flex items-start gap-3 py-2"
+                            >
+                                <RadioGroupItem
+                                    :id="`billing-${address.id}`"
+                                    :value="String(address.id)"
                                 />
-                                <span>
+                                <Label
+                                    :for="`billing-${address.id}`"
+                                    class="cursor-pointer leading-snug"
+                                >
                                     {{ address.address_line_1
                                     }}<span v-if="address.address_line_2"
                                         >, {{ address.address_line_2 }}</span
                                     >, {{ address.city }}, {{ address.postcode }},
                                     {{ address.country }}
-                                </span>
-                            </label>
-                        </div>
-                    </fieldset>
+                                </Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
 
                     <!-- Shipping Address -->
-                    <fieldset class="address-fieldset">
-                        <legend>Shipping Address</legend>
-                        <div
-                            v-for="address in addresses"
-                            :key="`shipping-${address.id}`"
-                            class="address-option"
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">Shipping Address</h3>
+                        <RadioGroup
+                            :model-value="String(shippingAddressId)"
+                            @update:model-value="(v) => selectShippingAddress(Number(v))"
                         >
-                            <label :for="`shipping-address-${address.id}`">
-                                <input
-                                    :id="`shipping-address-${address.id}`"
-                                    type="radio"
-                                    name="shipping_address"
-                                    :value="address.id"
-                                    :checked="shippingAddressId === address.id"
-                                    @change="selectShippingAddress(address.id)"
+                            <div
+                                v-for="address in addresses"
+                                :key="`shipping-${address.id}`"
+                                class="flex items-start gap-3 py-2"
+                            >
+                                <RadioGroupItem
+                                    :id="`shipping-${address.id}`"
+                                    :value="String(address.id)"
                                 />
-                                <span>
+                                <Label
+                                    :for="`shipping-${address.id}`"
+                                    class="cursor-pointer leading-snug"
+                                >
                                     {{ address.address_line_1
                                     }}<span v-if="address.address_line_2"
                                         >, {{ address.address_line_2 }}</span
                                     >, {{ address.city }}, {{ address.postcode }},
                                     {{ address.country }}
-                                </span>
-                            </label>
-                        </div>
-                    </fieldset>
+                                </Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
 
                     <!-- Add new address -->
-                    <button
+                    <Button
                         type="button"
-                        class="btn btn-secondary add-address-btn"
+                        variant="outline"
+                        data-testid="add-address-btn"
                         @click="showAddressModal = true"
                     >
                         Add new address
-                    </button>
+                    </Button>
 
-                    <!-- Address Modal Overlay -->
-                    <div
-                        v-if="showAddressModal"
-                        class="modal-overlay"
-                        role="dialog"
-                        aria-labelledby="address-modal-title"
-                        aria-modal="true"
-                        ref="modalElement"
-                        tabindex="-1"
-                        @click.self="showAddressModal = false"
-                        @keydown.esc="showAddressModal = false"
-                        @keydown.tab="handleModalTabKey"
-                    >
-                        <div class="modal-content">
-                            <header class="modal-header">
-                                <h2 id="address-modal-title">Add New Address</h2>
-                            </header>
-                            <form class="modal-form" @submit.prevent="handleModalSubmit">
-                                <p v-if="modalError" class="error-msg">{{ modalError }}</p>
-                                <div class="form-group">
-                                    <label for="country">Country *</label>
-                                    <input
+                    <!-- Address Modal (Dialog handles overlay, ESC, and focus trap) -->
+                    <Dialog v-model:open="showAddressModal">
+                        <DialogContent class="max-w-lg">
+                            <DialogHeader>
+                                <DialogTitle>Add New Address</DialogTitle>
+                            </DialogHeader>
+                            <form
+                                class="flex flex-col gap-4"
+                                @submit.prevent="handleModalSubmit"
+                            >
+                                <Alert
+                                    v-if="modalError"
+                                    variant="destructive"
+                                    data-testid="modal-error"
+                                >
+                                    <AlertDescription>{{ modalError }}</AlertDescription>
+                                </Alert>
+                                <div class="flex flex-col gap-1.5">
+                                    <Label for="country">Country *</Label>
+                                    <Input
                                         id="country"
                                         v-model="modalFormData.country"
-                                        type="text"
                                         required
                                     />
                                 </div>
-                                <div class="form-group">
-                                    <label for="city">City *</label>
-                                    <input
+                                <div class="flex flex-col gap-1.5">
+                                    <Label for="city">City *</Label>
+                                    <Input
                                         id="city"
                                         v-model="modalFormData.city"
-                                        type="text"
                                         required
                                     />
                                 </div>
-                                <div class="form-group">
-                                    <label for="address_line_1">Address Line 1 *</label>
-                                    <input
+                                <div class="flex flex-col gap-1.5">
+                                    <Label for="address_line_1">Address Line 1 *</Label>
+                                    <Input
                                         id="address_line_1"
                                         v-model="modalFormData.address_line_1"
-                                        type="text"
                                         required
                                     />
                                 </div>
-                                <div class="form-group">
-                                    <label for="address_line_2">Address Line 2</label>
-                                    <input
+                                <div class="flex flex-col gap-1.5">
+                                    <Label for="address_line_2">Address Line 2</Label>
+                                    <Input
                                         id="address_line_2"
                                         v-model="modalFormData.address_line_2"
-                                        type="text"
                                     />
                                 </div>
-                                <div class="form-group">
-                                    <label for="postcode">Postcode *</label>
-                                    <input
+                                <div class="flex flex-col gap-1.5">
+                                    <Label for="postcode">Postcode *</Label>
+                                    <Input
                                         id="postcode"
                                         v-model="modalFormData.postcode"
-                                        type="text"
                                         required
                                     />
                                 </div>
-                                <div class="form-actions">
-                                    <button
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        data-testid="modal-cancel"
+                                        @click="closeModal"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
                                         type="submit"
-                                        class="btn btn-primary"
+                                        data-testid="modal-submit"
                                         :disabled="modalSubmitting"
                                     >
                                         {{ modalSubmitting ? "Saving..." : "Save Address" }}
-                                    </button>
-                                </div>
+                                    </Button>
+                                </DialogFooter>
                             </form>
-                            <footer class="modal-footer">
-                                <button
-                                    type="button"
-                                    class="btn btn-secondary"
-                                    @click="closeModal"
-                                >
-                                    Cancel
-                                </button>
-                            </footer>
-                        </div>
-                    </div>
+                        </DialogContent>
+                    </Dialog>
 
-                    <!-- Error message -->
-                    <div v-if="error" class="error-message" role="alert">
-                        <p>{{ error }}</p>
-                        <p>Please fix the issue above and try again.</p>
-                    </div>
+                    <!-- Checkout error -->
+                    <Alert v-if="error" variant="destructive" data-testid="checkout-error">
+                        <AlertDescription>{{ error }}</AlertDescription>
+                    </Alert>
 
                     <!-- Submit Order -->
-                    <button
-                        class="btn btn-primary submit-order-btn"
+                    <Button
                         :disabled="isSubmitting || !billingAddressId || !shippingAddressId"
+                        data-testid="submit-order-btn"
                         @click="handleSubmitOrder"
                     >
                         {{ isSubmitting ? "Placing Order…" : "Submit Order" }}
-                    </button>
+                    </Button>
                 </div>
             </template>
             <!-- T2.6: <template v-else> guest checkout form goes here </template> -->
@@ -205,11 +198,21 @@
 
 <script setup lang="ts">
 import type { CustomerAddress } from "~/composables/useCheckout";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Protect this route — unauthenticated visitors are redirected by the middleware.
-definePageMeta({ middleware: "auth" });
-
-// Reactive auth state — also used in the template for v-if="isAuthenticated"
+definePageMeta({ middleware: "auth", ssr: false });
 // so T2.6 can add v-else guest blocks alongside the logged-in flow.
 const { isAuthenticated } = useAuth();
 
@@ -238,7 +241,6 @@ const api = useApi();
 
 const loadingAddresses = ref(false);
 const showAddressModal = ref(false);
-const modalElement = ref<HTMLElement | null>(null);
 const modalError = ref<string | null>(null);
 const modalSubmitting = ref(false);
 
@@ -292,44 +294,6 @@ async function handleModalSubmit(): Promise<void> {
     }
 }
 
-// Focus the modal when it opens so keyboard navigation starts inside it.
-watch(showAddressModal, (isOpen) => {
-    if (isOpen) {
-        nextTick(() => {
-            modalElement.value?.focus();
-        });
-    }
-});
-
-/**
- * Manual focus trap: cycle Tab / Shift+Tab within the modal's focusable elements.
- */
-function handleModalTabKey(event: KeyboardEvent): void {
-    const modal = modalElement.value;
-    if (!modal) return;
-
-    const focusableSelectors =
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const focusable = Array.from(modal.querySelectorAll<HTMLElement>(focusableSelectors));
-    if (focusable.length === 0) return;
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement as HTMLElement;
-
-    if (event.shiftKey) {
-        if (active === first) {
-            event.preventDefault();
-            last.focus();
-        }
-    } else {
-        if (active === last) {
-            event.preventDefault();
-            first.focus();
-        }
-    }
-}
-
 // Persist order confirmation in sessionStorage so it survives page reload.
 const SESSION_KEY = "checkout.orderConfirmation";
 
@@ -374,239 +338,3 @@ async function handleSubmitOrder(): Promise<void> {
 // Expose handleSubmitOrder, showAddressModal, and modalFormData so tests (and any parent component) can access them.
 defineExpose({ handleSubmitOrder, showAddressModal, modalFormData, resetModalForm, modalError, modalSubmitting });
 </script>
-
-<style scoped>
-.checkout-page {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
-
-h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-}
-
-.loading-text {
-    color: #6b7280;
-    font-style: italic;
-}
-
-.no-addresses {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.address-selection {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.address-fieldset {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1rem 1.5rem;
-}
-
-.address-fieldset legend {
-    font-weight: 600;
-    padding: 0 0.5rem;
-}
-
-.address-option {
-    margin: 0.75rem 0;
-}
-
-.address-option label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    cursor: pointer;
-}
-
-.address-option input[type="radio"] {
-    margin-top: 0.2rem;
-    flex-shrink: 0;
-}
-
-.error-message {
-    background-color: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 0.5rem;
-    padding: 1rem 1.25rem;
-    color: #b91c1c;
-}
-
-.error-message p {
-    margin: 0.25rem 0;
-}
-
-.submit-order-btn {
-    align-self: flex-start;
-}
-
-/* Confirmation */
-.confirmation {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.confirmation h1 {
-    color: #15803d;
-}
-
-.confirmation-summary {
-    background-color: #f0fdf4;
-    border: 1px solid #86efac;
-    border-radius: 0.5rem;
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.confirmation-summary p {
-    margin: 0;
-}
-
-.delivery-message {
-    color: #6b7280;
-    font-style: italic;
-    margin-top: 0.5rem !important;
-}
-
-.confirmation-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-/* Buttons */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.625rem 1.25rem;
-    border-radius: 0.375rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-primary {
-    background-color: #2563eb;
-    color: #ffffff;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background-color: #1d4ed8;
-}
-
-.btn-secondary {
-    background-color: #e5e7eb;
-    color: #374151;
-}
-
-.btn-secondary:hover {
-    background-color: #d1d5db;
-}
-
-/* ── Address Modal Overlay ── */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-}
-
-.modal-content {
-    background-color: #ffffff;
-    border-radius: 0.5rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 560px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.modal-header h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-}
-
-/* ── Modal form field styles (mirrors /account/addresses/new.vue) ── */
-.modal-form .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-    margin-bottom: 0;
-}
-
-.modal-form .form-group label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-}
-
-.modal-form .form-group input {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    transition: border-color 0.15s;
-}
-
-.modal-form .form-group input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-.modal-form .error-msg {
-    color: #b91c1c;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 0.375rem;
-    padding: 0.625rem 1rem;
-    font-size: 0.9rem;
-    margin-bottom: 0;
-}
-</style>

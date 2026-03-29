@@ -1,182 +1,188 @@
 <template>
     <div>
         <!-- Loading state -->
-        <div v-if="loading" class="slug-page__loading">
+        <div v-if="loading" class="py-12 px-6 text-center text-gray-500">
             <p>Loading...</p>
         </div>
 
         <!-- ── Product page ─────────────────────────────────────────────── -->
-        <div v-else-if="product" class="product-detail">
+        <div v-else-if="product" class="p-6">
             <Breadcrumb :items="productBreadcrumb" />
 
-            <!-- Image Gallery -->
-            <section class="product-detail__gallery">
-                <div v-if="product.images && product.images.length > 0" class="gallery">
-                    <img :src="selectedImage" :alt="product.name" class="gallery__primary" />
-                    <div class="gallery__thumbnails">
+            <!-- Image Gallery + Product Info (responsive 2-col) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <!-- Image Gallery -->
+                <section>
+                    <div v-if="product.images && product.images.length > 0">
                         <img
-                            v-for="(image, index) in product.images"
-                            :key="index"
-                            :src="image"
-                            :alt="`${product.name} thumbnail ${index + 1}`"
-                            class="gallery__thumbnail"
-                            :class="{ 'gallery__thumbnail--active': selectedImage === image }"
-                            @click="selectedImage = image"
+                            :src="selectedImage"
+                            :alt="product.name"
+                            class="w-full max-h-96 object-cover rounded-lg"
+                        />
+                        <div class="flex gap-2 mt-2">
+                            <img
+                                v-for="(image, index) in product.images"
+                                :key="index"
+                                :src="image"
+                                :alt="`${product.name} thumbnail ${index + 1}`"
+                                class="w-16 h-16 object-cover rounded cursor-pointer border-2"
+                                :class="selectedImage === image ? 'border-blue-500' : 'border-transparent'"
+                                @click="selectedImage = image"
+                            />
+                        </div>
+                    </div>
+                    <div v-else class="py-8 text-center bg-gray-100 rounded-lg text-gray-500">
+                        <p>No images available</p>
+                    </div>
+                </section>
+
+                <!-- Product Info -->
+                <section>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
+                    <p v-if="product.description" class="text-gray-700 mb-4">
+                        {{ product.description }}
+                    </p>
+
+                    <!-- Variant Selector -->
+                    <div class="mb-4">
+                        <label for="variant-select" class="block text-sm font-medium text-gray-700 mb-1">
+                            Select Variant
+                        </label>
+                        <Select v-model="selectedVariantIdStr">
+                            <SelectTrigger id="variant-select" class="w-full">
+                                <SelectValue placeholder="-- Select a variant --" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="variant in product.variants"
+                                    :key="variant.id"
+                                    :value="String(variant.id)"
+                                >
+                                    {{ formatVariantLabel(variant) }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <!-- Selected Variant Info -->
+                    <div v-if="selectedVariant" class="mb-4">
+                        <p class="text-lg font-semibold text-gray-900">
+                            Price:
+                            <strong v-if="selectedVariant.special_price">
+                                ${{ selectedVariant.special_price }}
+                            </strong>
+                            <strong v-else>${{ selectedVariant.regular_price }}</strong>
+                            <span
+                                v-if="selectedVariant.special_price"
+                                class="ml-2 text-sm text-gray-500"
+                            >
+                                <s>${{ selectedVariant.regular_price }}</s>
+                            </span>
+                        </p>
+                        <p
+                            class="text-sm mb-4"
+                            :class="isOutOfStock ? 'text-red-600' : 'text-green-600'"
+                        >
+                            <span v-if="isOutOfStock">Out of stock</span>
+                            <span v-else>In stock ({{ selectedVariant.stock_quantity }} available)</span>
+                        </p>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <label for="quantity-input" class="block text-sm font-medium text-gray-700 mb-1">
+                            Quantity
+                        </label>
+                        <input
+                            id="quantity-input"
+                            v-model.number="quantity"
+                            type="number"
+                            min="1"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                     </div>
-                </div>
-                <div v-else class="gallery__placeholder">
-                    <p>No images available</p>
-                </div>
-            </section>
 
-            <!-- Product Info -->
-            <section class="product-detail__info">
-                <h1 class="product-detail__name">{{ product.name }}</h1>
-                <p v-if="product.description" class="product-detail__description">
-                    {{ product.description }}
-                </p>
-
-                <!-- Variant Selector -->
-                <div class="product-detail__variants">
-                    <label for="variant-select" class="product-detail__label">Select Variant</label>
-                    <select
-                        id="variant-select"
-                        v-model="selectedVariantId"
-                        class="product-detail__select"
+                    <!-- Add to Cart -->
+                    <Button
+                        data-testid="add-to-cart"
+                        :disabled="!canAddToCart"
+                        @click="handleAddToCart"
                     >
-                        <option value="">-- Select a variant --</option>
-                        <option
-                            v-for="variant in product.variants"
-                            :key="variant.id"
-                            :value="variant.id"
-                        >
-                            {{ formatVariantLabel(variant) }}
-                        </option>
-                    </select>
-                </div>
+                        <span v-if="addingToCart">Adding...</span>
+                        <span v-else>Add to Cart</span>
+                    </Button>
 
-                <!-- Selected Variant Info -->
-                <div v-if="selectedVariant" class="product-detail__variant-info">
-                    <p class="product-detail__price">
-                        Price:
-                        <strong v-if="selectedVariant.special_price"
-                            >${{ selectedVariant.special_price }}</strong
-                        >
-                        <strong v-else>${{ selectedVariant.regular_price }}</strong>
-                        <span v-if="selectedVariant.special_price" class="product-detail__regular-price">
-                            <s>${{ selectedVariant.regular_price }}</s>
-                        </span>
+                    <p v-if="cartSuccess" class="text-sm text-green-600 mt-2" role="alert">
+                        Added to cart successfully!
                     </p>
-                    <p class="product-detail__stock" :class="{ 'out-of-stock': isOutOfStock }">
-                        <span v-if="isOutOfStock">Out of stock</span>
-                        <span v-else>In stock ({{ selectedVariant.stock_quantity }} available)</span>
+                    <p v-if="cartError" class="text-sm text-red-600 mt-2" role="alert">
+                        {{ cartError }}
                     </p>
-                </div>
 
-                <!-- Quantity -->
-                <div class="product-detail__quantity">
-                    <label for="quantity-input" class="product-detail__label">Quantity</label>
-                    <input
-                        id="quantity-input"
-                        v-model.number="quantity"
-                        type="number"
-                        min="1"
-                        class="product-detail__quantity-input"
-                    />
-                </div>
-
-                <!-- Add to Cart -->
-                <button
-                    data-testid="add-to-cart"
-                    class="product-detail__add-to-cart"
-                    :disabled="!canAddToCart"
-                    @click="handleAddToCart"
-                >
-                    <span v-if="addingToCart">Adding...</span>
-                    <span v-else>Add to Cart</span>
-                </button>
-
-                <p v-if="cartSuccess" class="product-detail__cart-success" role="alert">
-                    Added to cart successfully!
-                </p>
-                <p v-if="cartError" class="product-detail__cart-error" role="alert">
-                    {{ cartError }}
-                </p>
-
-                <!-- Specifications -->
-                <div
-                    v-if="product.attributes && Object.keys(product.attributes).length > 0"
-                    class="product-detail__specs"
-                >
-                    <h2>Specifications</h2>
-                    <dl class="specs-list">
-                        <template v-for="(value, key) in product.attributes" :key="key">
-                            <dt>{{ key }}</dt>
-                            <dd>{{ value }}</dd>
-                        </template>
-                    </dl>
-                </div>
-            </section>
+                    <!-- Specifications -->
+                    <div
+                        v-if="product.attributes && Object.keys(product.attributes).length > 0"
+                        class="mt-6"
+                    >
+                        <h2 class="text-lg font-semibold text-gray-900 mb-2">Specifications</h2>
+                        <dl class="grid grid-cols-[max-content_1fr] gap-1 gap-x-4 text-sm">
+                            <template v-for="(value, key) in product.attributes" :key="key">
+                                <dt class="text-gray-500 font-medium capitalize">{{ key }}</dt>
+                                <dd class="text-gray-900 m-0">{{ value }}</dd>
+                            </template>
+                        </dl>
+                    </div>
+                </section>
+            </div>
 
             <!-- Review Form -->
-            <section class="product-detail__review-form">
-                <h2>Leave a Review</h2>
+            <section class="mt-8 pt-8 border-t border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Leave a Review</h2>
                 <ReviewForm :product-id="product.id" :already-reviewed="hasUserReviewed" />
             </section>
 
             <!-- Reviews -->
-            <section class="product-detail__reviews">
-                <h2>Customer Reviews</h2>
+            <section class="mt-8 pt-8 border-t border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Customer Reviews</h2>
                 <div v-if="product.reviews && product.reviews.length > 0">
-                    <div v-for="review in product.reviews" :key="review.id" class="review">
-                        <p class="review__customer">{{ review.customer_name }}</p>
-                        <p class="review__rating">Rating: {{ review.rating }}/5</p>
-                        <p class="review__comment">{{ review.comment }}</p>
+                    <div
+                        v-for="review in product.reviews"
+                        :key="review.id"
+                        class="py-4 border-b border-gray-100 last:border-b-0"
+                    >
+                        <p class="font-semibold">{{ review.customer_name }}</p>
+                        <p class="text-sm text-amber-500">Rating: {{ review.rating }}/5</p>
+                        <p class="text-gray-700">{{ review.comment }}</p>
                     </div>
                 </div>
-                <p v-else class="product-detail__no-reviews">No reviews yet</p>
+                <p v-else class="text-gray-400">No reviews yet</p>
             </section>
         </div>
 
         <!-- ── Category page ─────────────────────────────────────────────── -->
-        <div v-else-if="category" class="category-page">
+        <div v-else-if="category" class="p-6">
             <!-- Breadcrumb -->
-            <nav class="category-page__breadcrumb">
-                <NuxtLink to="/">Home</NuxtLink>
-                <span
-                    v-for="(cat, i) in resolvedCategories"
-                    :key="cat.id"
-                    class="category-page__breadcrumb-segment"
-                >
-                    <span class="category-page__breadcrumb-sep"> → </span>
-                    <NuxtLink :to="'/' + slugSegments.slice(0, i + 1).join('/')">{{ cat.name }}</NuxtLink>
-                </span>
-                <span class="category-page__breadcrumb-segment">
-                    <span class="category-page__breadcrumb-sep"> → </span>
-                    <span>{{ category.name }}</span>
-                </span>
-            </nav>
+            <Breadcrumb :items="categoryBreadcrumb" />
 
             <!-- Category header -->
-            <header class="category-page__header">
+            <header class="mt-4">
                 <img
                     v-if="category.image"
                     :src="category.image"
                     :alt="category.name"
-                    class="category-page__image"
+                    class="w-full max-h-48 object-cover rounded-lg mb-4"
                 />
-                <h1 class="category-page__title">{{ category.name }}</h1>
+                <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ category.name }}</h1>
             </header>
 
             <!-- Subcategories -->
             <section
                 v-if="category.children && category.children.length > 0"
-                class="category-page__subcategories"
+                class="mb-6"
                 data-testid="subcategories"
             >
-                <h2 class="category-page__subcategories-title">Subcategories</h2>
-                <div class="category-page__subcategories-list">
+                <h2 class="text-base font-semibold mb-3">Subcategories</h2>
+                <div class="flex flex-wrap gap-2">
                     <CategoryChip
                         v-for="child in category.children"
                         :key="child.id"
@@ -188,8 +194,8 @@
             </section>
 
             <!-- Products grid -->
-            <section class="category-page__products">
-                <div class="product-grid">
+            <section>
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
                     <ProductCard
                         v-for="catProduct in categoryProducts"
                         :key="catProduct.id"
@@ -201,21 +207,29 @@
             <!-- Pagination -->
             <nav
                 v-if="totalPages > 1"
-                class="category-page__pagination"
+                class="flex items-center justify-center gap-4 mt-8"
                 data-testid="pagination"
             >
-                <button :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">
+                <Button
+                    variant="outline"
+                    :disabled="currentPage <= 1"
+                    @click="goToPage(currentPage - 1)"
+                >
                     Previous
-                </button>
-                <span>Page {{ currentPage }} of {{ totalPages }}</span>
-                <button :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">
+                </Button>
+                <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
+                <Button
+                    variant="outline"
+                    :disabled="currentPage >= totalPages"
+                    @click="goToPage(currentPage + 1)"
+                >
                     Next
-                </button>
+                </Button>
             </nav>
         </div>
 
         <!-- 404 -->
-        <div v-else class="slug-page__error">
+        <div v-else class="py-12 px-6 text-center text-gray-500">
             <p>Page not found.</p>
             <NuxtLink to="/">← Back to home</NuxtLink>
         </div>
@@ -223,10 +237,19 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false });
 import { ref, computed, onMounted } from "vue";
 import Breadcrumb from "~/components/Breadcrumb.vue";
 import type { BreadcrumbItem } from "~/components/Breadcrumb.vue";
 import type { CategoryResource } from "~/composables/useCategories";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -332,6 +355,14 @@ const hasUserReviewed = computed<boolean>(() => {
     return product.value.reviews.some((r) => r.customer_id === user.value!.id);
 });
 
+// String-based computed for shadcn Select (which works with string values)
+const selectedVariantIdStr = computed<string>({
+    get: () => (selectedVariantId.value === "" ? "" : String(selectedVariantId.value)),
+    set: (val: string) => {
+        selectedVariantId.value = val === "" ? "" : parseInt(val, 10);
+    },
+});
+
 // ---------------------------------------------------------------------------
 // Breadcrumbs
 // ---------------------------------------------------------------------------
@@ -358,6 +389,22 @@ const productBreadcrumb = computed<BreadcrumbItem[]>(() => {
     return [
         ...categoryItems,
         { id: product.value.id, name: product.value.name, slugs: [] },
+    ];
+});
+
+const categoryBreadcrumb = computed<BreadcrumbItem[]>(() => {
+    if (!category.value) return [];
+
+    const parentItems: BreadcrumbItem[] = resolvedCategories.value.map((cat, i) => ({
+        id: cat.id,
+        name: cat.name,
+        slugs: [],
+        url: `/${slugSegments.value.slice(0, i + 1).join("/")}`,
+    }));
+
+    return [
+        ...parentItems,
+        { id: category.value.id, name: category.value.name, slugs: [] },
     ];
 });
 
@@ -487,233 +534,3 @@ onMounted(async () => {
     }
 });
 </script>
-
-<style scoped>
-/* ── Loading / error ─────────────────────────────────────────────────────── */
-.slug-page__loading,
-.slug-page__error {
-    padding: 3rem 1.5rem;
-    text-align: center;
-    color: #6b7280;
-}
-
-/* ── Product detail (reuse classes from products/[slug].vue) ─────────────── */
-.product-detail {
-    padding: 1.5rem;
-}
-.product-detail__gallery {
-    margin-bottom: 2rem;
-}
-.gallery__primary {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 0.5rem;
-}
-.gallery__thumbnails {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-.gallery__thumbnail {
-    width: 64px;
-    height: 64px;
-    object-fit: cover;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    border: 2px solid transparent;
-}
-.gallery__thumbnail--active {
-    border-color: #2563eb;
-}
-.gallery__placeholder {
-    padding: 2rem;
-    text-align: center;
-    background: #f3f4f6;
-    border-radius: 0.5rem;
-    color: #6b7280;
-}
-.product-detail__content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-}
-@media (max-width: 640px) {
-    .product-detail__content {
-        grid-template-columns: 1fr;
-    }
-}
-.product-detail__name {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 0.75rem;
-}
-.product-detail__description {
-    color: #374151;
-    margin-bottom: 1rem;
-}
-.product-detail__label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.25rem;
-}
-.product-detail__select,
-.product-detail__quantity-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-}
-.product-detail__variants,
-.product-detail__quantity {
-    margin-bottom: 1rem;
-}
-.product-detail__price {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
-}
-.product-detail__regular-price {
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-.product-detail__stock {
-    font-size: 0.875rem;
-    color: #16a34a;
-    margin-bottom: 1rem;
-}
-.product-detail__stock.out-of-stock {
-    color: #dc2626;
-}
-.product-detail__add-to-cart {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.5rem;
-    background: #2563eb;
-    color: #fff;
-    font-weight: 600;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.product-detail__add-to-cart:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-}
-.product-detail__cart-success {
-    color: #16a34a;
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-.product-detail__cart-error {
-    color: #dc2626;
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-.product-detail__specs {
-    margin-top: 1.5rem;
-}
-.specs-list {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.25rem 1rem;
-    font-size: 0.875rem;
-}
-.specs-list dt {
-    color: #6b7280;
-    font-weight: 500;
-    text-transform: capitalize;
-}
-.specs-list dd {
-    color: #111827;
-    margin: 0;
-}
-.product-detail__review-form,
-.product-detail__reviews {
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e5e7eb;
-}
-.review {
-    padding: 1rem 0;
-    border-bottom: 1px solid #f3f4f6;
-}
-.review__customer {
-    font-weight: 600;
-}
-.review__rating {
-    font-size: 0.875rem;
-    color: #f59e0b;
-}
-.review__comment {
-    color: #374151;
-}
-.product-detail__no-reviews {
-    color: #9ca3af;
-}
-
-/* ── Category page ───────────────────────────────────────────────────────── */
-.category-page {
-    padding: 1.5rem;
-}
-.category-page__breadcrumb {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0;
-}
-.category-page__breadcrumb-segment {
-    display: inline-flex;
-    align-items: center;
-}
-.category-page__breadcrumb-sep {
-    margin: 0 0.25rem;
-}
-.category-page__image {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-}
-.category-page__title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 1.5rem;
-}
-.category-page__subcategories {
-    margin-bottom: 1.5rem;
-}
-.category-page__subcategories-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-.category-page__subcategories-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.5rem;
-}
-.category-page__pagination {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 2rem;
-    justify-content: center;
-}
-</style>
