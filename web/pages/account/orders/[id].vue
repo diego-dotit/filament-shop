@@ -1,7 +1,9 @@
 <template>
     <div class="max-w-4xl mx-auto px-4 py-8 space-y-8">
         <!-- Back link -->
-        <NuxtLink to="/account/orders" class="text-sm text-blue-600 hover:underline">← Back to My Orders</NuxtLink>
+        <NuxtLink to="/account/orders" class="text-sm text-blue-600 hover:underline"
+            >← Back to My Orders</NuxtLink
+        >
 
         <!-- Loading state -->
         <div v-if="loading" class="text-gray-500 py-4">Loading order…</div>
@@ -91,7 +93,14 @@
 </template>
 
 <script setup lang="ts">
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import {
+    Table,
+    TableHeader,
+    TableBody,
+    TableHead,
+    TableRow,
+    TableCell,
+} from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Protect this route — unauthenticated visitors are redirected by the middleware.

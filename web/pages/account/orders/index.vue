@@ -29,7 +29,10 @@
             <TableBody>
                 <TableRow v-for="order in orders" :key="order.id">
                     <TableCell>
-                        <NuxtLink :to="`/account/orders/${order.id}`" class="text-blue-600 hover:underline">
+                        <NuxtLink
+                            :to="`/account/orders/${order.id}`"
+                            class="text-blue-600 hover:underline"
+                        >
                             #{{ order.id }}
                         </NuxtLink>
                     </TableCell>
@@ -43,7 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import {
+    Table,
+    TableHeader,
+    TableBody,
+    TableHead,
+    TableRow,
+    TableCell,
+} from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Protect this route — unauthenticated visitors are redirected by the middleware.

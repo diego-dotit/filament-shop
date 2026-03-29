@@ -85,31 +85,22 @@ async function submitEdit(): Promise<void> {
 </script>
 
 <template>
-    <div class="mx-auto max-w-md w-full px-4 py-8">
-        <h1 class="text-2xl font-semibold mb-6">Edit Profile</h1>
+    <div>
+        <h1>Edit Profile</h1>
 
         <!-- Success message -->
-        <Alert
-            v-if="successMessage"
-            data-testid="success-msg"
-            class="mb-4"
-        >
+        <Alert v-if="successMessage" data-testid="success-msg">
             <AlertDescription>{{ successMessage }}</AlertDescription>
         </Alert>
 
         <!-- Error message -->
-        <Alert
-            v-if="errorMessage"
-            data-testid="error-msg"
-            variant="destructive"
-            class="mb-4"
-        >
+        <Alert v-if="errorMessage" data-testid="error-msg" variant="destructive">
             <AlertDescription>{{ errorMessage }}</AlertDescription>
         </Alert>
 
         <!-- Edit form -->
-        <form data-testid="edit-form" class="flex flex-col gap-4" @submit.prevent="submitEdit">
-            <div class="flex flex-col gap-1.5">
+        <form data-testid="edit-form" @submit.prevent="submitEdit">
+            <div>
                 <Label for="first-name">First Name</Label>
                 <Input
                     id="first-name"
@@ -121,7 +112,7 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div class="flex flex-col gap-1.5">
+            <div>
                 <Label for="last-name">Last Name</Label>
                 <Input
                     id="last-name"
@@ -133,7 +124,7 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div class="flex flex-col gap-1.5">
+            <div>
                 <Label for="email">Email</Label>
                 <Input
                     id="email"
@@ -145,7 +136,7 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div class="flex flex-col gap-1.5">
+            <div>
                 <Label for="phone">Phone</Label>
                 <Input
                     id="phone"
@@ -157,14 +148,9 @@ async function submitEdit(): Promise<void> {
                 />
             </div>
 
-            <div class="flex gap-3 mt-2">
+            <div>
                 <Button data-testid="submit-btn" type="submit" :disabled="submitting">Save</Button>
-                <Button
-                    data-testid="cancel-btn"
-                    type="button"
-                    variant="outline"
-                    @click="cancel"
-                >
+                <Button data-testid="cancel-btn" type="button" variant="outline" @click="cancel">
                     Cancel
                 </Button>
             </div>

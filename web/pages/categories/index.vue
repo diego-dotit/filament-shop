@@ -1,34 +1,26 @@
 <template>
-    <div class="max-w-5xl mx-auto px-6 py-8">
-        <h1 class="text-3xl font-bold mb-6">All Categories</h1>
-        <div v-if="error" class="text-red-600 py-4">
+    <div>
+        <h1>All Categories</h1>
+        <div v-if="error">
             <p>{{ error }}</p>
         </div>
-        <div v-else-if="loading" class="text-gray-500 py-4">Loading categories...</div>
-        <div v-else-if="categories.length === 0" class="py-4">
+        <div v-else-if="loading">Loading categories...</div>
+        <div v-else-if="categories.length === 0">
             <p>No categories found.</p>
         </div>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-                v-for="cat in categories"
-                :key="cat.id"
-                data-testid="category-card"
-            >
-                <NuxtLink :to="`/${cat.slug}`" class="block no-underline text-inherit">
-                    <Card class="hover:shadow-lg transition-shadow">
-                        <CardContent class="pt-4">
-                            <h2 class="text-lg font-semibold mb-2">{{ cat.name }}</h2>
-                            <p v-if="cat.description" class="text-sm text-gray-500 leading-relaxed">
+        <div v-else>
+            <div v-for="cat in categories" :key="cat.id" data-testid="category-card">
+                <NuxtLink :to="`/${cat.slug}`">
+                    <Card>
+                        <CardContent>
+                            <h2>{{ cat.name }}</h2>
+                            <p v-if="cat.description">
                                 {{ cat.description }}
                             </p>
                         </CardContent>
                     </Card>
                 </NuxtLink>
-                <div
-                    v-if="cat.children && cat.children.length > 0"
-                    data-testid="subcategories"
-                    class="flex flex-wrap gap-2 bg-gray-50 border border-t-0 p-3 rounded-b-lg"
-                >
+                <div v-if="cat.children && cat.children.length > 0" data-testid="subcategories">
                     <CategoryChip
                         v-for="child in cat.children"
                         :key="child.id"

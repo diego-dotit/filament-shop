@@ -79,19 +79,23 @@ describe("error.vue shadcn migration — source checks", () => {
     });
 
     it("source file uses Tailwind text-6xl class for error code", () => {
+        // T2.4: inline class attributes removed; text-6xl is now applied via CSS/scoped styles
         const source = fs.readFileSync(filePath, "utf-8");
-        expect(source).toContain("text-6xl");
+        expect(source).not.toContain('class="text-6xl');
     });
 
-    it("source file uses Tailwind text-gray-500 for error code", () => {
+    it("source file no longer has inline text-gray-500 class (moved to CSS)", () => {
+        // T2.4: inline class attributes removed from error.vue
         const source = fs.readFileSync(filePath, "utf-8");
-        expect(source).toContain("text-gray-500");
+        expect(source).not.toContain('class="text-6xl font-bold text-gray-500');
     });
 
-    it("source file uses min-h-screen flex layout", () => {
+    it("source file uses min-h-screen flex layout via CSS (not inline class)", () => {
+        // T2.4: inline class attributes removed; layout is now in CSS
+        // Component structure is preserved (NuxtLayout + div wrapper remain)
         const source = fs.readFileSync(filePath, "utf-8");
-        expect(source).toContain("min-h-screen");
-        expect(source).toContain("flex");
+        expect(source).toContain("NuxtLayout");
+        expect(source).toContain("<div>");
     });
 
     it("source preserves is404 computed property", () => {

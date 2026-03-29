@@ -1,55 +1,52 @@
 <template>
     <div>
         <!-- Loading state -->
-        <div v-if="loading" class="py-12 px-6 text-center text-gray-500">
+        <div v-if="loading">
             <p>Loading...</p>
         </div>
 
         <!-- ── Product page ─────────────────────────────────────────────── -->
-        <div v-else-if="product" class="p-6">
+        <div v-else-if="product">
             <Breadcrumb :items="productBreadcrumb" />
 
             <!-- Image Gallery + Product Info (responsive 2-col) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div>
                 <!-- Image Gallery -->
                 <section>
                     <div v-if="product.images && product.images.length > 0">
-                        <img
-                            :src="selectedImage"
-                            :alt="product.name"
-                            class="w-full max-h-96 object-cover rounded-lg"
-                        />
-                        <div class="flex gap-2 mt-2">
+                        <img :src="selectedImage" :alt="product.name" />
+                        <div>
                             <img
                                 v-for="(image, index) in product.images"
                                 :key="index"
                                 :src="image"
                                 :alt="`${product.name} thumbnail ${index + 1}`"
-                                class="w-16 h-16 object-cover rounded cursor-pointer border-2"
-                                :class="selectedImage === image ? 'border-blue-500' : 'border-transparent'"
+                                :class="
+                                    selectedImage === image
+                                        ? 'border-blue-500'
+                                        : 'border-transparent'
+                                "
                                 @click="selectedImage = image"
                             />
                         </div>
                     </div>
-                    <div v-else class="py-8 text-center bg-gray-100 rounded-lg text-gray-500">
+                    <div v-else>
                         <p>No images available</p>
                     </div>
                 </section>
 
                 <!-- Product Info -->
                 <section>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
-                    <p v-if="product.description" class="text-gray-700 mb-4">
+                    <h1>{{ product.name }}</h1>
+                    <p v-if="product.description">
                         {{ product.description }}
                     </p>
 
                     <!-- Variant Selector -->
-                    <div class="mb-4">
-                        <label for="variant-select" class="block text-sm font-medium text-gray-700 mb-1">
-                            Select Variant
-                        </label>
+                    <div>
+                        <label for="variant-select"> Select Variant </label>
                         <Select v-model="selectedVariantIdStr">
-                            <SelectTrigger id="variant-select" class="w-full">
+                            <SelectTrigger id="variant-select">
                                 <SelectValue placeholder="-- Select a variant --" />
                             </SelectTrigger>
                             <SelectContent>
@@ -65,40 +62,33 @@
                     </div>
 
                     <!-- Selected Variant Info -->
-                    <div v-if="selectedVariant" class="mb-4">
-                        <p class="text-lg font-semibold text-gray-900">
+                    <div v-if="selectedVariant">
+                        <p>
                             Price:
                             <strong v-if="selectedVariant.special_price">
                                 ${{ selectedVariant.special_price }}
                             </strong>
                             <strong v-else>${{ selectedVariant.regular_price }}</strong>
-                            <span
-                                v-if="selectedVariant.special_price"
-                                class="ml-2 text-sm text-gray-500"
-                            >
+                            <span v-if="selectedVariant.special_price">
                                 <s>${{ selectedVariant.regular_price }}</s>
                             </span>
                         </p>
-                        <p
-                            class="text-sm mb-4"
-                            :class="isOutOfStock ? 'text-red-600' : 'text-green-600'"
-                        >
+                        <p :class="isOutOfStock ? 'text-red-600' : 'text-green-600'">
                             <span v-if="isOutOfStock">Out of stock</span>
-                            <span v-else>In stock ({{ selectedVariant.stock_quantity }} available)</span>
+                            <span v-else
+                                >In stock ({{ selectedVariant.stock_quantity }} available)</span
+                            >
                         </p>
                     </div>
 
                     <!-- Quantity -->
-                    <div class="mb-4">
-                        <label for="quantity-input" class="block text-sm font-medium text-gray-700 mb-1">
-                            Quantity
-                        </label>
+                    <div>
+                        <label for="quantity-input"> Quantity </label>
                         <input
                             id="quantity-input"
                             v-model.number="quantity"
                             type="number"
                             min="1"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                     </div>
 
@@ -112,23 +102,18 @@
                         <span v-else>Add to Cart</span>
                     </Button>
 
-                    <p v-if="cartSuccess" class="text-sm text-green-600 mt-2" role="alert">
-                        Added to cart successfully!
-                    </p>
-                    <p v-if="cartError" class="text-sm text-red-600 mt-2" role="alert">
+                    <p v-if="cartSuccess" role="alert">Added to cart successfully!</p>
+                    <p v-if="cartError" role="alert">
                         {{ cartError }}
                     </p>
 
                     <!-- Specifications -->
-                    <div
-                        v-if="product.attributes && Object.keys(product.attributes).length > 0"
-                        class="mt-6"
-                    >
-                        <h2 class="text-lg font-semibold text-gray-900 mb-2">Specifications</h2>
-                        <dl class="grid grid-cols-[max-content_1fr] gap-1 gap-x-4 text-sm">
+                    <div v-if="product.attributes && Object.keys(product.attributes).length > 0">
+                        <h2>Specifications</h2>
+                        <dl>
                             <template v-for="(value, key) in product.attributes" :key="key">
-                                <dt class="text-gray-500 font-medium capitalize">{{ key }}</dt>
-                                <dd class="text-gray-900 m-0">{{ value }}</dd>
+                                <dt>{{ key }}</dt>
+                                <dd>{{ value }}</dd>
                             </template>
                         </dl>
                     </div>
@@ -136,53 +121,43 @@
             </div>
 
             <!-- Review Form -->
-            <section class="mt-8 pt-8 border-t border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Leave a Review</h2>
+            <section>
+                <h2>Leave a Review</h2>
                 <ReviewForm :product-id="product.id" :already-reviewed="hasUserReviewed" />
             </section>
 
             <!-- Reviews -->
-            <section class="mt-8 pt-8 border-t border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Customer Reviews</h2>
+            <section>
+                <h2>Customer Reviews</h2>
                 <div v-if="product.reviews && product.reviews.length > 0">
-                    <div
-                        v-for="review in product.reviews"
-                        :key="review.id"
-                        class="py-4 border-b border-gray-100 last:border-b-0"
-                    >
-                        <p class="font-semibold">{{ review.customer_name }}</p>
-                        <p class="text-sm text-amber-500">Rating: {{ review.rating }}/5</p>
-                        <p class="text-gray-700">{{ review.comment }}</p>
+                    <div v-for="review in product.reviews" :key="review.id">
+                        <p>{{ review.customer_name }}</p>
+                        <p>Rating: {{ review.rating }}/5</p>
+                        <p>{{ review.comment }}</p>
                     </div>
                 </div>
-                <p v-else class="text-gray-400">No reviews yet</p>
+                <p v-else>No reviews yet</p>
             </section>
         </div>
 
         <!-- ── Category page ─────────────────────────────────────────────── -->
-        <div v-else-if="category" class="p-6">
+        <div v-else-if="category">
             <!-- Breadcrumb -->
             <Breadcrumb :items="categoryBreadcrumb" />
 
             <!-- Category header -->
-            <header class="mt-4">
-                <img
-                    v-if="category.image"
-                    :src="category.image"
-                    :alt="category.name"
-                    class="w-full max-h-48 object-cover rounded-lg mb-4"
-                />
-                <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ category.name }}</h1>
+            <header>
+                <img v-if="category.image" :src="category.image" :alt="category.name" />
+                <h1>{{ category.name }}</h1>
             </header>
 
             <!-- Subcategories -->
             <section
                 v-if="category.children && category.children.length > 0"
-                class="mb-6"
                 data-testid="subcategories"
             >
-                <h2 class="text-base font-semibold mb-3">Subcategories</h2>
-                <div class="flex flex-wrap gap-2">
+                <h2>Subcategories</h2>
+                <div>
                     <CategoryChip
                         v-for="child in category.children"
                         :key="child.id"
@@ -195,7 +170,7 @@
 
             <!-- Products grid -->
             <section>
-                <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
+                <div>
                     <ProductCard
                         v-for="catProduct in categoryProducts"
                         :key="catProduct.id"
@@ -205,11 +180,7 @@
             </section>
 
             <!-- Pagination -->
-            <nav
-                v-if="totalPages > 1"
-                class="flex items-center justify-center gap-4 mt-8"
-                data-testid="pagination"
-            >
+            <nav v-if="totalPages > 1" data-testid="pagination">
                 <Button
                     variant="outline"
                     :disabled="currentPage <= 1"
@@ -217,7 +188,7 @@
                 >
                     Previous
                 </Button>
-                <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
+                <span>Page {{ currentPage }} of {{ totalPages }}</span>
                 <Button
                     variant="outline"
                     :disabled="currentPage >= totalPages"
@@ -229,7 +200,7 @@
         </div>
 
         <!-- 404 -->
-        <div v-else class="py-12 px-6 text-center text-gray-500">
+        <div v-else>
             <p>Page not found.</p>
             <NuxtLink to="/">← Back to home</NuxtLink>
         </div>
@@ -386,10 +357,7 @@ const productBreadcrumb = computed<BreadcrumbItem[]>(() => {
                 : `/${cat.slug}`,
     }));
 
-    return [
-        ...categoryItems,
-        { id: product.value.id, name: product.value.name, slugs: [] },
-    ];
+    return [...categoryItems, { id: product.value.id, name: product.value.name, slugs: [] }];
 });
 
 const categoryBreadcrumb = computed<BreadcrumbItem[]>(() => {
@@ -402,10 +370,7 @@ const categoryBreadcrumb = computed<BreadcrumbItem[]>(() => {
         url: `/${slugSegments.value.slice(0, i + 1).join("/")}`,
     }));
 
-    return [
-        ...parentItems,
-        { id: category.value.id, name: category.value.name, slugs: [] },
-    ];
+    return [...parentItems, { id: category.value.id, name: category.value.name, slugs: [] }];
 });
 
 // ---------------------------------------------------------------------------

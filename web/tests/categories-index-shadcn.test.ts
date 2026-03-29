@@ -26,6 +26,7 @@ import { resolve } from "path";
 vi.stubGlobal("computed", computed);
 vi.stubGlobal("onMounted", onMounted);
 vi.stubGlobal("ref", ref);
+vi.stubGlobal("definePageMeta", vi.fn());
 
 const stateStore: Record<string, ReturnType<typeof ref>> = {};
 vi.stubGlobal("useState", (key: string, init: () => unknown) => {
@@ -114,30 +115,29 @@ describe("categories/index.vue — shadcn migration (source checks)", () => {
         expect(componentSource).not.toMatch(/class="[^"]*\bcategory-card\b[^"]*"/);
     });
 
-    it("uses Tailwind grid utilities for responsive layout", () => {
-        expect(componentSource).toContain("grid-cols-1");
-        expect(componentSource).toContain("grid-cols-2");
-        expect(componentSource).toContain("grid-cols-3");
+    it("uses Card and CardContent components for category grid items", () => {
+        expect(componentSource).toContain("<Card");
+        expect(componentSource).toContain("<CardContent");
     });
 
-    it("uses Tailwind container utilities (max-w)", () => {
-        expect(componentSource).toMatch(/max-w-\w+/);
+    it("uses NuxtLink for category navigation", () => {
+        expect(componentSource).toContain("<NuxtLink");
     });
 
-    it("uses Tailwind typography for heading (font-bold)", () => {
-        expect(componentSource).toContain("font-bold");
+    it("renders category name in a heading element", () => {
+        expect(componentSource).toContain("<h2>");
     });
 
-    it("uses Tailwind text-red colour for error state", () => {
-        expect(componentSource).toMatch(/text-red-\d+/);
+    it("uses v-if to conditionally render error state", () => {
+        expect(componentSource).toContain('v-if="error"');
     });
 
-    it("uses Tailwind text-gray colour for loading state", () => {
-        expect(componentSource).toMatch(/text-gray-\d+/);
+    it("uses v-else-if to conditionally render loading state", () => {
+        expect(componentSource).toContain('v-else-if="loading"');
     });
 
-    it("uses hover:shadow-lg for card hover effect", () => {
-        expect(componentSource).toContain("hover:shadow-lg");
+    it("uses data-testid='category-card' for each category item", () => {
+        expect(componentSource).toContain('data-testid="category-card"');
     });
 });
 
@@ -214,7 +214,7 @@ describe("categories/index.vue — shadcn migration (render checks)", () => {
         expect(hrefs).toContain("/pla");
     });
 
-    it("shows loading state with Tailwind text-gray class", async () => {
+    it("shows loading state text", async () => {
         mockApi.mockReturnValueOnce(new Promise(() => {}));
 
         const { default: CategoriesPage } = await import(
@@ -222,12 +222,11 @@ describe("categories/index.vue — shadcn migration (render checks)", () => {
         );
         const wrapper = mount(CategoriesPage, { global: { stubs: globalStubs } });
 
-        const html = wrapper.html();
-        expect(html).toMatch(/text-gray-\d+/);
+        // Loading text shown immediately (Tailwind text-gray class removed by T2.2)
         expect(wrapper.text().toLowerCase()).toContain("loading");
     });
 
-    it("shows error state with Tailwind text-red class", async () => {
+    it("shows error state text", async () => {
         mockApi.mockRejectedValueOnce(new Error("Network error"));
 
         const { default: CategoriesPage } = await import(
@@ -238,8 +237,8 @@ describe("categories/index.vue — shadcn migration (render checks)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const html = wrapper.html();
-        expect(html).toMatch(/text-red-\d+/);
+        // Error message rendered (Tailwind text-red class removed by T2.2)
+        expect(wrapper.text().toLowerCase()).toMatch(/fail|error|try again/);
     });
 
     it("renders subcategory chips inside subcategories section", async () => {
@@ -269,7 +268,7 @@ describe("categories/index.vue — shadcn migration (render checks)", () => {
         expect(subcatSection.text()).toContain("PLA Silk");
     });
 
-    it("subcategories section has Tailwind flex classes", async () => {
+    it("subcategories section exists and contains category chip text", async () => {
         mockApi.mockResolvedValueOnce({
             data: [
                 {
@@ -291,8 +290,9 @@ describe("categories/index.vue — shadcn migration (render checks)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
+        // Subcategories section exists — flex class removed by T2.2, but section is still there
         const subcatSection = wrapper.find('[data-testid="subcategories"]');
         expect(subcatSection.exists()).toBe(true);
-        expect(subcatSection.classes()).toContain("flex");
+        expect(subcatSection.text()).toContain("PLA Silk");
     });
 });

@@ -196,36 +196,35 @@ describe("[slug].vue — shadcn migration: source structure", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tailwind class tests (source code inspection)
+// Structural source-code checks (Tailwind utility assertions replaced per T2.8)
 // ---------------------------------------------------------------------------
 
-describe("[slug].vue — shadcn migration: Tailwind classes in source", () => {
-    it("primary image has object-cover Tailwind class", () => {
+describe("[slug].vue — shadcn migration: source structure (gallery & specs)", () => {
+    it("gallery section renders a primary image element with :src binding", () => {
         const src = readPage();
-        expect(src).toContain("object-cover");
+        // Primary img is bound to selectedImage ref (no static Tailwind class required)
+        expect(src).toContain(':src="selectedImage"');
     });
 
-    it("primary image has rounded-lg Tailwind class", () => {
+    it("gallery thumbnails have a click handler to update selectedImage", () => {
         const src = readPage();
-        expect(src).toContain("rounded-lg");
+        expect(src).toContain('@click="selectedImage = image"');
     });
 
-    it("thumbnail images have cursor-pointer Tailwind class", () => {
+    it("gallery thumbnails iterate with v-for over product.images", () => {
         const src = readPage();
-        expect(src).toContain("cursor-pointer");
+        expect(src).toContain('v-for="(image, index) in product.images"');
     });
 
-    it("specs dl element has grid Tailwind class", () => {
+    it("specifications section uses a dl element for key-value display", () => {
         const src = readPage();
-        expect(src).toContain("grid");
+        expect(src).toContain("<dl>");
     });
 
-    it("dt elements have text-gray-500 or similar muted text class", () => {
+    it("specifications section uses dt and dd elements for attribute display", () => {
         const src = readPage();
-        // Could be text-gray-500 or text-muted-foreground
-        const hasGray500 = src.includes("text-gray-500");
-        const hasMuted = src.includes("text-muted-foreground");
-        expect(hasGray500 || hasMuted).toBe(true);
+        expect(src).toContain("<dt>");
+        expect(src).toContain("<dd>");
     });
 });
 
@@ -240,7 +239,7 @@ describe("[slug].vue — shadcn migration: rendered HTML", () => {
         mockCreateError.mockClear();
     });
 
-    it("primary gallery image has object-cover class in rendered HTML", async () => {
+    it("primary gallery image renders with product name as alt text", async () => {
         setupStubs();
 
         const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
@@ -249,12 +248,15 @@ describe("[slug].vue — shadcn migration: rendered HTML", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const primaryImg = wrapper.find(".gallery__primary");
-        expect(primaryImg.exists()).toBe(true);
-        expect(primaryImg.classes()).toContain("object-cover");
+        // Primary image should render (no longer requires object-cover class — removed by T2.2)
+        const imgs = wrapper.findAll("img");
+        expect(imgs.length).toBeGreaterThan(0);
+        const primaryImg = imgs.find((img) => img.attributes("alt") === "PLA Filament");
+        expect(primaryImg).toBeDefined();
+        expect(primaryImg!.exists()).toBe(true);
     });
 
-    it("primary gallery image has rounded-lg class in rendered HTML", async () => {
+    it("primary gallery image renders with correct src (first image URL)", async () => {
         setupStubs();
 
         const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
@@ -263,12 +265,14 @@ describe("[slug].vue — shadcn migration: rendered HTML", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const primaryImg = wrapper.find(".gallery__primary");
-        expect(primaryImg.exists()).toBe(true);
-        expect(primaryImg.classes()).toContain("rounded-lg");
+        // Primary img uses selectedImage ref — no rounded-lg class required (removed by T2.2)
+        const imgs = wrapper.findAll("img");
+        const primaryImg = imgs.find((img) => img.attributes("src") === "https://example.com/image1.jpg");
+        expect(primaryImg).toBeDefined();
+        expect(primaryImg!.exists()).toBe(true);
     });
 
-    it("thumbnail images have cursor-pointer class in rendered HTML", async () => {
+    it("multiple gallery images render (one per product image)", async () => {
         setupStubs();
 
         const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
@@ -277,14 +281,12 @@ describe("[slug].vue — shadcn migration: rendered HTML", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const thumbnails = wrapper.findAll(".gallery__thumbnail");
-        expect(thumbnails.length).toBeGreaterThan(0);
-        thumbnails.forEach((thumb) => {
-            expect(thumb.classes()).toContain("cursor-pointer");
-        });
+        // Product has 2 images; thumbnails render without cursor-pointer class (removed by T2.2)
+        const imgs = wrapper.findAll("img");
+        expect(imgs.length).toBeGreaterThanOrEqual(2);
     });
 
-    it("specs dl element has grid class in rendered HTML", async () => {
+    it("specs dl element exists in rendered HTML", async () => {
         setupStubs();
 
         const { default: ProductDetailPage } = await import("../pages/products/[slug].vue");
@@ -293,9 +295,9 @@ describe("[slug].vue — shadcn migration: rendered HTML", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
+        // dl element exists — no grid class required (removed by T2.2)
         const dl = wrapper.find("dl");
         expect(dl.exists()).toBe(true);
-        expect(dl.classes()).toContain("grid");
     });
 
     it("Add to Cart button is disabled when no variant selected", async () => {

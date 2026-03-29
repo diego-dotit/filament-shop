@@ -1,12 +1,11 @@
 <template>
-    <div class="max-w-screen-xl mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold mb-6">Filament Shop</h1>
+    <div>
+        <h1>Filament Shop</h1>
 
         <!-- Category filter -->
-        <div class="flex flex-wrap gap-2 mb-6">
+        <div>
             <Button
                 :variant="selectedCategorySlug === null ? 'default' : 'outline'"
-                class="rounded-full"
                 @click="clearCategory"
             >
                 All Products
@@ -15,18 +14,17 @@
                 v-for="category in categories"
                 :key="category.id"
                 :variant="selectedCategorySlug === category.slug ? 'default' : 'outline'"
-                class="rounded-full"
                 @click="selectCategory(category.slug)"
             >
                 {{ category.name }}
             </Button>
         </div>
 
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6 mb-8">
+        <div>
             <ProductCard v-for="product in products" :key="product.id" :product="product" />
         </div>
 
-        <div class="flex items-center justify-center gap-4 my-8">
+        <div>
             <Button
                 variant="outline"
                 :disabled="currentPage <= 1"
@@ -35,7 +33,7 @@
                 Previous
             </Button>
 
-            <span class="text-sm text-gray-500"> Page {{ currentPage }} of {{ totalPages }} </span>
+            <span> Page {{ currentPage }} of {{ totalPages }} </span>
 
             <Button
                 variant="outline"

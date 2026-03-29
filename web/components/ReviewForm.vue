@@ -1,36 +1,22 @@
 <template>
     <!-- Already reviewed: show message instead of form -->
-    <div
-        v-if="isAuthenticated && alreadyReviewed"
-        class="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground"
-        data-testid="already-reviewed"
-    >
+    <div v-if="isAuthenticated && alreadyReviewed" data-testid="already-reviewed">
         <p>You have already submitted a review for this product.</p>
     </div>
 
     <!-- Success state: show confirmation, hide form -->
-    <div
-        v-else-if="submitted"
-        class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
-        role="alert"
-        data-testid="review-success"
-    >
+    <div v-else-if="submitted" role="alert" data-testid="review-success">
         <p>Review submitted — awaiting moderation. Thank you!</p>
     </div>
 
     <!-- Form: only for authenticated users who have not yet reviewed -->
-    <form
-        v-else-if="isAuthenticated"
-        class="flex flex-col gap-4"
-        data-testid="review-form"
-        @submit.prevent="handleSubmit"
-    >
-        <h3 class="text-lg font-semibold">Write a Review</h3>
+    <form v-else-if="isAuthenticated" data-testid="review-form" @submit.prevent="handleSubmit">
+        <h3>Write a Review</h3>
 
         <!-- Star Rating -->
-        <div class="flex flex-col gap-2" role="group" aria-label="Rating">
-            <label class="font-medium">Rating <span class="text-red-500">*</span></label>
-            <div class="flex gap-1">
+        <div role="group" aria-label="Rating">
+            <label>Rating <span>*</span></label>
+            <div>
                 <Button
                     v-for="star in 5"
                     :key="star"
@@ -45,12 +31,12 @@
                     {{ rating >= star ? "★" : "☆" }}
                 </Button>
             </div>
-            <p v-if="ratingError" class="text-sm text-red-500" role="alert">{{ ratingError }}</p>
+            <p v-if="ratingError" role="alert">{{ ratingError }}</p>
         </div>
 
         <!-- Comment -->
-        <div class="flex flex-col gap-2">
-            <label for="review-comment" class="font-medium">Comment (optional)</label>
+        <div>
+            <label for="review-comment">Comment (optional)</label>
             <Textarea
                 id="review-comment"
                 v-model="comment"
@@ -59,19 +45,14 @@
                 maxlength="500"
                 placeholder="Share your experience..."
             />
-            <p
-                class="text-xs mt-1"
-                :class="{ 'text-red-500': commentTooLong, 'text-gray-500': !commentTooLong }"
-            >
+            <p :class="{ 'text-red-500': commentTooLong, 'text-gray-500': !commentTooLong }">
                 {{ comment.length }} / 500
             </p>
-            <p v-if="commentTooLong" class="text-sm text-red-500" role="alert">
-                Comment must not exceed 500 characters.
-            </p>
+            <p v-if="commentTooLong" role="alert">Comment must not exceed 500 characters.</p>
         </div>
 
         <!-- Submission error -->
-        <p v-if="submitError" class="text-sm text-red-500" role="alert">
+        <p v-if="submitError" role="alert">
             {{ submitError }}
         </p>
 

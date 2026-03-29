@@ -1,56 +1,54 @@
 <template>
-    <div class="max-w-5xl mx-auto px-4 py-8">
+    <div>
         <!-- 404 / Error state -->
-        <div v-if="error" class="text-red-500">
+        <div v-if="error">
             <p>{{ error }}</p>
         </div>
 
         <!-- Loading state -->
-        <div v-else-if="loading" class="text-gray-500">
+        <div v-else-if="loading">
             <p>Loading product...</p>
         </div>
 
         <!-- Product content -->
-        <div v-else-if="product" class="mt-4">
+        <div v-else-if="product">
             <!-- Breadcrumb navigation -->
             <Breadcrumb :items="breadcrumbItems" />
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+            <div>
                 <!-- Image Gallery -->
                 <section>
-                    <div v-if="product.images && product.images.length > 0" class="flex flex-col gap-2">
-                        <img
-                            :src="selectedImage"
-                            :alt="product.name"
-                            class="gallery__primary w-full max-h-96 object-cover rounded-lg"
-                        />
-                        <div class="flex gap-1 flex-wrap mt-2">
+                    <div v-if="product.images && product.images.length > 0">
+                        <img :src="selectedImage" :alt="product.name" />
+                        <div>
                             <img
                                 v-for="(image, index) in product.images"
                                 :key="index"
                                 :src="image"
                                 :alt="`${product.name} thumbnail ${index + 1}`"
-                                class="gallery__thumbnail w-16 h-16 object-cover rounded border-2 border-transparent cursor-pointer hover:border-blue-500"
-                                :class="{ 'gallery__thumbnail--active border-blue-500': selectedImage === image }"
+                                :class="{
+                                    'gallery__thumbnail--active border-blue-500':
+                                        selectedImage === image,
+                                }"
                                 @click="selectedImage = image"
                             />
                         </div>
                     </div>
-                    <div v-else class="flex items-center justify-center h-48 rounded-lg border text-gray-400">
+                    <div v-else>
                         <p>No images available</p>
                     </div>
                 </section>
 
                 <!-- Product Info -->
-                <section class="flex flex-col gap-4">
-                    <h1 class="text-2xl font-bold">{{ product.name }}</h1>
-                    <p class="text-gray-600">{{ product.description }}</p>
+                <section>
+                    <h1>{{ product.name }}</h1>
+                    <p>{{ product.description }}</p>
 
                     <!-- Variant Selector -->
-                    <div class="flex flex-col gap-1">
-                        <label for="variant-select" class="text-sm font-medium">Select Variant</label>
+                    <div>
+                        <label for="variant-select">Select Variant</label>
                         <Select v-model="selectedVariantId">
-                            <SelectTrigger id="variant-select" class="w-full">
+                            <SelectTrigger id="variant-select">
                                 <SelectValue placeholder="-- Select a variant --" />
                             </SelectTrigger>
                             <SelectContent>
@@ -66,24 +64,18 @@
                     </div>
 
                     <!-- Selected Variant Info -->
-                    <div v-if="selectedVariant" class="flex flex-col gap-1">
-                        <p class="text-lg">
+                    <div v-if="selectedVariant">
+                        <p>
                             Price:
-                            <strong v-if="selectedVariant.special_price" class="text-red-600"
+                            <strong v-if="selectedVariant.special_price"
                                 >${{ selectedVariant.special_price }}</strong
                             >
                             <strong v-else>${{ selectedVariant.regular_price }}</strong>
-                            <span
-                                v-if="selectedVariant.special_price"
-                                class="text-gray-500 line-through ml-2 text-sm font-normal"
-                            >
+                            <span v-if="selectedVariant.special_price">
                                 ${{ selectedVariant.regular_price }}
                             </span>
                         </p>
-                        <p
-                            class="text-sm"
-                            :class="isOutOfStock ? 'text-red-500' : 'text-green-600'"
-                        >
+                        <p :class="isOutOfStock ? 'text-red-500' : 'text-green-600'">
                             <span v-if="isOutOfStock">Out of stock</span>
                             <span v-else
                                 >In stock ({{ selectedVariant.stock_quantity }} available)</span
@@ -92,14 +84,13 @@
                     </div>
 
                     <!-- Quantity Input -->
-                    <div class="flex flex-col gap-1">
-                        <label for="quantity-input" class="text-sm font-medium">Quantity</label>
+                    <div>
+                        <label for="quantity-input">Quantity</label>
                         <input
                             id="quantity-input"
                             v-model.number="quantity"
                             type="number"
                             min="1"
-                            class="border rounded px-2 py-1 w-24 text-sm"
                         />
                     </div>
 
@@ -115,23 +106,18 @@
                     </Button>
 
                     <!-- Success / Error Feedback -->
-                    <p v-if="cartSuccess" class="text-green-600 text-sm" role="alert">
-                        Added to cart successfully!
-                    </p>
-                    <p v-if="cartError" class="text-red-500 text-sm" role="alert">
+                    <p v-if="cartSuccess" role="alert">Added to cart successfully!</p>
+                    <p v-if="cartError" role="alert">
                         {{ cartError }}
                     </p>
 
                     <!-- Product Specifications -->
-                    <div
-                        v-if="product.attributes && Object.keys(product.attributes).length > 0"
-                        class="mt-2"
-                    >
-                        <h2 class="text-lg font-semibold mb-2">Specifications</h2>
-                        <dl class="grid grid-cols-[max-content_1fr] gap-1 gap-x-4 text-sm">
+                    <div v-if="product.attributes && Object.keys(product.attributes).length > 0">
+                        <h2>Specifications</h2>
+                        <dl>
                             <template v-for="(value, key) in product.attributes" :key="key">
-                                <dt class="text-gray-500 font-medium">{{ key }}</dt>
-                                <dd class="text-gray-900">{{ value }}</dd>
+                                <dt>{{ key }}</dt>
+                                <dd>{{ value }}</dd>
                             </template>
                         </dl>
                     </div>
@@ -140,22 +126,22 @@
         </div>
 
         <!-- Review Submission Form -->
-        <section v-if="product" class="mt-8">
-            <h2 class="text-xl font-semibold mb-4">Leave a Review</h2>
+        <section v-if="product">
+            <h2>Leave a Review</h2>
             <ReviewForm :product-id="product.id" :already-reviewed="hasUserReviewed" />
         </section>
 
         <!-- Reviews Section -->
-        <section v-if="product" class="mt-8">
-            <h2 class="text-xl font-semibold mb-4">Customer Reviews</h2>
+        <section v-if="product">
+            <h2>Customer Reviews</h2>
             <div v-if="product.reviews && product.reviews.length > 0">
-                <div v-for="review in product.reviews" :key="review.id" class="border-b py-3">
-                    <p class="font-semibold">{{ review.customer_name }}</p>
-                    <p class="text-sm text-gray-600">Rating: {{ review.rating }}/5</p>
-                    <p class="text-sm mt-1">{{ review.comment }}</p>
+                <div v-for="review in product.reviews" :key="review.id">
+                    <p>{{ review.customer_name }}</p>
+                    <p>Rating: {{ review.rating }}/5</p>
+                    <p>{{ review.comment }}</p>
                 </div>
             </div>
-            <p v-else class="text-gray-500">No reviews yet</p>
+            <p v-else>No reviews yet</p>
         </section>
     </div>
 </template>
@@ -174,7 +160,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-
 
 // ---------------------------------------------------------------------------
 // Types (extending ProductResource with reviews)
@@ -297,7 +282,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 // ---------------------------------------------------------------------------
 
 function formatVariantLabel(variant: ProductVariantWithStock): string {
-    const parts = variant.attributes.map(attr => `${attr.name}: ${attr.value}`);
+    const parts = variant.attributes.map((attr) => `${attr.name}: ${attr.value}`);
     return parts.length > 0 ? parts.join(", ") : variant.sku;
 }
 

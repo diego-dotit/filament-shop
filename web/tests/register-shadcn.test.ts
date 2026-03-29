@@ -129,16 +129,17 @@ describe("Register page — shadcn migration (T5.5)", () => {
         expect(btn.attributes("type")).toBe("submit");
     });
 
-    it("submit Button has w-full class", async () => {
+    it("submit Button exists and is type=submit (w-full class removed by T2.2)", async () => {
         const { default: RegisterPage } = await import("../pages/register.vue");
         const wrapper = mount(RegisterPage, { global: { stubs: globalStubs } });
         const btn = wrapper.find('[data-slot="button"]');
-        expect(btn.classes()).toContain("w-full");
+        expect(btn.exists()).toBe(true);
+        expect(btn.attributes("type")).toBe("submit");
     });
 
     // ── Password mismatch error ────────────────────────────────────────────────
 
-    it("shows mismatch error with text-sm text-destructive classes", async () => {
+    it("shows mismatch error paragraph on password mismatch (class removed by T2.2)", async () => {
         const { default: RegisterPage } = await import("../pages/register.vue");
         const wrapper = mount(RegisterPage, { global: { stubs: globalStubs } });
 
@@ -150,9 +151,8 @@ describe("Register page — shadcn migration (T5.5)", () => {
         await wrapper.find("form").trigger("submit.prevent");
         await wrapper.vm.$nextTick();
 
-        const errorEl = wrapper.find("p.text-sm.text-destructive");
-        expect(errorEl.exists()).toBe(true);
-        expect(errorEl.text()).toMatch(/password.*match|match.*password/i);
+        // Error paragraph exists — text-destructive class removed by T2.2
+        expect(wrapper.text()).toMatch(/password.*match|match.*password/i);
     });
 
     // ── API error via Alert ────────────────────────────────────────────────────
@@ -181,14 +181,12 @@ describe("Register page — shadcn migration (T5.5)", () => {
 
     // ── "Already have an account?" link ───────────────────────────────────────
 
-    it("renders the login link with Tailwind utility classes", async () => {
+    it("renders the login link (Tailwind utility classes removed by T2.2)", async () => {
         const { default: RegisterPage } = await import("../pages/register.vue");
         const wrapper = mount(RegisterPage, { global: { stubs: globalStubs } });
 
-        // The paragraph with the link
-        const linkPara = wrapper.find("p.text-center");
-        expect(linkPara.exists()).toBe(true);
-        expect(linkPara.text()).toContain("Already have an account");
+        // The paragraph with the link — no longer carries text-center class (removed by T2.2)
+        expect(wrapper.text()).toContain("Already have an account");
     });
 
     // ── Functionality preserved (smoke tests) ─────────────────────────────────

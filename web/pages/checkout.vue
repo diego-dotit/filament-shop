@@ -1,7 +1,7 @@
 <template>
-    <div class="max-w-4xl mx-auto px-6 py-8">
+    <div>
         <!-- Order Confirmation -->
-        <section v-if="orderConfirmation" class="flex flex-col gap-6">
+        <section v-if="orderConfirmation">
             <OrderConfirmation
                 :order-id="orderConfirmation.id"
                 :total-amount="orderConfirmation.total_amount"
@@ -11,44 +11,39 @@
 
         <!-- Checkout Form -->
         <section v-else class="checkout-form">
-            <h1 class="text-2xl font-bold mb-6">Checkout</h1>
+            <h1>Checkout</h1>
 
             <!-- ── Logged-in user: address selection ──────────────────────── -->
             <!-- T2.6: add v-else here for guest checkout flow -->
             <template v-if="isAuthenticated">
                 <!-- Loading addresses -->
-                <p v-if="loadingAddresses" class="text-muted-foreground italic">Loading addresses…</p>
+                <p v-if="loadingAddresses">Loading addresses…</p>
 
                 <!-- No addresses -->
-                <div v-else-if="addresses.length === 0" class="flex flex-col gap-4">
+                <div v-else-if="addresses.length === 0">
                     <p>No saved addresses found. Please add an address to continue.</p>
-                    <Button as-child class="self-start">
-                        <NuxtLink :to="'/account/addresses/new?redirect=/checkout'">Add Address</NuxtLink>
+                    <Button as-child>
+                        <NuxtLink :to="'/account/addresses/new?redirect=/checkout'"
+                            >Add Address</NuxtLink
+                        >
                     </Button>
                 </div>
 
                 <!-- Address selection -->
-                <div v-else class="flex flex-col gap-8" data-testid="address-selection">
+                <div v-else data-testid="address-selection">
                     <!-- Billing Address -->
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-3">Billing Address</h3>
+                    <div>
+                        <h3>Billing Address</h3>
                         <RadioGroup
                             :model-value="String(billingAddressId)"
                             @update:model-value="(v) => selectBillingAddress(Number(v))"
                         >
-                            <div
-                                v-for="address in addresses"
-                                :key="`billing-${address.id}`"
-                                class="flex items-start gap-3 py-2"
-                            >
+                            <div v-for="address in addresses" :key="`billing-${address.id}`">
                                 <RadioGroupItem
                                     :id="`billing-${address.id}`"
                                     :value="String(address.id)"
                                 />
-                                <Label
-                                    :for="`billing-${address.id}`"
-                                    class="cursor-pointer leading-snug"
-                                >
+                                <Label :for="`billing-${address.id}`">
                                     {{ address.address_line_1
                                     }}<span v-if="address.address_line_2"
                                         >, {{ address.address_line_2 }}</span
@@ -60,25 +55,18 @@
                     </div>
 
                     <!-- Shipping Address -->
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-3">Shipping Address</h3>
+                    <div>
+                        <h3>Shipping Address</h3>
                         <RadioGroup
                             :model-value="String(shippingAddressId)"
                             @update:model-value="(v) => selectShippingAddress(Number(v))"
                         >
-                            <div
-                                v-for="address in addresses"
-                                :key="`shipping-${address.id}`"
-                                class="flex items-start gap-3 py-2"
-                            >
+                            <div v-for="address in addresses" :key="`shipping-${address.id}`">
                                 <RadioGroupItem
                                     :id="`shipping-${address.id}`"
                                     :value="String(address.id)"
                                 />
-                                <Label
-                                    :for="`shipping-${address.id}`"
-                                    class="cursor-pointer leading-snug"
-                                >
+                                <Label :for="`shipping-${address.id}`">
                                     {{ address.address_line_1
                                     }}<span v-if="address.address_line_2"
                                         >, {{ address.address_line_2 }}</span
@@ -101,14 +89,11 @@
 
                     <!-- Address Modal (Dialog handles overlay, ESC, and focus trap) -->
                     <Dialog v-model:open="showAddressModal">
-                        <DialogContent class="max-w-lg">
+                        <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Add New Address</DialogTitle>
                             </DialogHeader>
-                            <form
-                                class="flex flex-col gap-4"
-                                @submit.prevent="handleModalSubmit"
-                            >
+                            <form @submit.prevent="handleModalSubmit">
                                 <Alert
                                     v-if="modalError"
                                     variant="destructive"
@@ -116,23 +101,15 @@
                                 >
                                     <AlertDescription>{{ modalError }}</AlertDescription>
                                 </Alert>
-                                <div class="flex flex-col gap-1.5">
+                                <div>
                                     <Label for="country">Country *</Label>
-                                    <Input
-                                        id="country"
-                                        v-model="modalFormData.country"
-                                        required
-                                    />
+                                    <Input id="country" v-model="modalFormData.country" required />
                                 </div>
-                                <div class="flex flex-col gap-1.5">
+                                <div>
                                     <Label for="city">City *</Label>
-                                    <Input
-                                        id="city"
-                                        v-model="modalFormData.city"
-                                        required
-                                    />
+                                    <Input id="city" v-model="modalFormData.city" required />
                                 </div>
-                                <div class="flex flex-col gap-1.5">
+                                <div>
                                     <Label for="address_line_1">Address Line 1 *</Label>
                                     <Input
                                         id="address_line_1"
@@ -140,14 +117,14 @@
                                         required
                                     />
                                 </div>
-                                <div class="flex flex-col gap-1.5">
+                                <div>
                                     <Label for="address_line_2">Address Line 2</Label>
                                     <Input
                                         id="address_line_2"
                                         v-model="modalFormData.address_line_2"
                                     />
                                 </div>
-                                <div class="flex flex-col gap-1.5">
+                                <div>
                                     <Label for="postcode">Postcode *</Label>
                                     <Input
                                         id="postcode"
@@ -336,5 +313,12 @@ async function handleSubmitOrder(): Promise<void> {
 }
 
 // Expose handleSubmitOrder, showAddressModal, and modalFormData so tests (and any parent component) can access them.
-defineExpose({ handleSubmitOrder, showAddressModal, modalFormData, resetModalForm, modalError, modalSubmitting });
+defineExpose({
+    handleSubmitOrder,
+    showAddressModal,
+    modalFormData,
+    resetModalForm,
+    modalError,
+    modalSubmitting,
+});
 </script>

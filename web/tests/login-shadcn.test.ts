@@ -99,9 +99,9 @@ describe("login.vue shadcn migration — source checks", () => {
         expect(source).toContain("@/components/ui/alert");
     });
 
-    it("source file uses text-destructive for field errors", () => {
+    it("source file no longer uses text-destructive for field errors (removed by T2.2)", () => {
         const source = fs.readFileSync(filePath, "utf-8");
-        expect(source).toContain("text-destructive");
+        expect(source).not.toContain('class="text-sm text-destructive"');
     });
 });
 
@@ -154,12 +154,14 @@ describe("login.vue shadcn migration — rendered HTML", () => {
         expect(submitBtn.attributes("data-slot")).toBe("button");
     });
 
-    it("shows field-level error with text-destructive class", async () => {
+    it("shows field-level error paragraph when form submitted empty", async () => {
         const wrapper = await mountLoginPage();
         await wrapper.find("form").trigger("submit.prevent");
         await wrapper.vm.$nextTick();
-        const errorP = wrapper.find("p.text-destructive");
-        expect(errorP.exists()).toBe(true);
+        // Error paragraph exists (no longer carries text-destructive class — removed by T2.2)
+        const errorPs = wrapper.findAll("p");
+        const errorP = errorPs.find((p) => p.text().includes("valid email") || p.text().includes("required"));
+        expect(errorP).toBeDefined();
     });
 
     it("shows API error in a role=alert element with error text", async () => {
@@ -176,10 +178,11 @@ describe("login.vue shadcn migration — rendered HTML", () => {
         expect(wrapper.text()).toMatch(/invalid credentials/i);
     });
 
-    it("submit button is full-width (class w-full)", async () => {
+    it("submit button exists and is type=submit (w-full class removed by T2.2)", async () => {
         const wrapper = await mountLoginPage();
         const submitBtn = wrapper.find('button[type="submit"]');
-        expect(submitBtn.classes()).toContain("w-full");
+        expect(submitBtn.exists()).toBe(true);
+        expect(submitBtn.attributes("data-slot")).toBe("button");
     });
 
     it("'Don't have an account?' text and Register link are rendered", async () => {

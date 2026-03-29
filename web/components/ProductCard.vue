@@ -1,12 +1,12 @@
 <template>
-    <Card class="overflow-hidden hover:shadow-lg transition-shadow">
-        <NuxtLink :to="productUrl" class="block no-underline text-inherit">
-            <div class="aspect-square bg-gray-100 overflow-hidden">
-                <img :src="imageSrc" :alt="product.name" class="w-full h-full object-cover" />
+    <Card>
+        <NuxtLink :to="productUrl">
+            <div>
+                <img :src="imageSrc" :alt="product.name" />
             </div>
-            <CardContent class="pt-4">
-                <h2 class="text-base font-semibold mb-2">{{ product.name }}</h2>
-                <p class="text-sm text-gray-700">${{ lowestPrice }}</p>
+            <CardContent>
+                <h2>{{ product.name }}</h2>
+                <p>${{ lowestPrice }}</p>
             </CardContent>
         </NuxtLink>
     </Card>
@@ -23,7 +23,7 @@ const props = defineProps<{
     product: ProductResource;
 }>();
 
-const productUrl = computed<string>(() => '/' + props.product.slug);
+const productUrl = computed<string>(() => "/" + props.product.slug);
 
 const imageSrc = computed<string>(() =>
     props.product.images && props.product.images.length > 0 ? props.product.images[0] : PLACEHOLDER

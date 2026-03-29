@@ -2,7 +2,7 @@
  * Tests for fetchProductBySlug() in useProducts composable.
  *
  * Acceptance criteria:
- *  - fetchProductBySlug(slug) calls GET /products?slug={slug}
+ *  - fetchProductBySlug(slug) calls GET /products/{slug}
  *  - Returns ProductResource with `locale` and `slugs` fields
  *  - `slugs` is Array<{locale: string; slug: string}>
  *  - `locale` is the language of the resolved slug
@@ -43,9 +43,6 @@ vi.stubGlobal("useState", (key: string, init: () => unknown) => {
 });
 
 vi.stubGlobal("computed", computed);
-
-// Import after globals are stubbed
-import { useProducts } from "../composables/useProducts";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -133,26 +130,30 @@ describe("ProductResource interface — locale and slugs fields", () => {
 // fetchProductBySlug() — happy path
 // ---------------------------------------------------------------------------
 
-describe("fetchProductBySlug() — fetches product by slug query param", () => {
+describe("fetchProductBySlug() — fetches product by slug path parameter", () => {
     beforeEach(() => {
         mockApi.mockReset();
+        for (const key of Object.keys(stateStore)) {
+            delete stateStore[key];
+        }
+        vi.resetModules();
     });
 
-    it("calls GET /products?slug={slug}", async () => {
+    it("calls GET /products/{slug} using path parameter", async () => {
         const responseData = makeProductResponse();
         mockApi.mockResolvedValue(responseData);
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
         await fetchProductBySlug("pla-filament");
 
-        expect(mockApi).toHaveBeenCalledWith("/products", {
-            query: { slug: "pla-filament" },
-        });
+        expect(mockApi).toHaveBeenCalledWith("/products/pla-filament", {});
     });
 
     it("returns a ProductResource with locale field from response", async () => {
         mockApi.mockResolvedValue(makeProductResponse({ locale: "es", slug: "filamento-pla" }));
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
         const product = await fetchProductBySlug("filamento-pla");
 
@@ -167,6 +168,7 @@ describe("fetchProductBySlug() — fetches product by slug query param", () => {
         ];
         mockApi.mockResolvedValue(makeProductResponse({ slugs }));
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
         const product = await fetchProductBySlug("pla-filament");
 
@@ -180,6 +182,7 @@ describe("fetchProductBySlug() — fetches product by slug query param", () => {
             makeProductResponse({ slug: "filamento-pla", locale: "es" })
         );
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
         const product = await fetchProductBySlug("filamento-pla");
 
@@ -190,6 +193,7 @@ describe("fetchProductBySlug() — fetches product by slug query param", () => {
         const responseData = makeProductResponse();
         mockApi.mockResolvedValue(responseData);
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug, currentProduct } = useProducts();
         await fetchProductBySlug("pla-filament");
 
@@ -204,12 +208,17 @@ describe("fetchProductBySlug() — fetches product by slug query param", () => {
 describe("fetchProductBySlug() — error handling", () => {
     beforeEach(() => {
         mockApi.mockReset();
+        for (const key of Object.keys(stateStore)) {
+            delete stateStore[key];
+        }
+        vi.resetModules();
     });
 
     it("returns null and sets error state on 404", async () => {
         const notFoundError = { statusCode: 404 };
         mockApi.mockRejectedValue(notFoundError);
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug, error } = useProducts();
         const result = await fetchProductBySlug("non-existent-slug");
 
@@ -221,6 +230,7 @@ describe("fetchProductBySlug() — error handling", () => {
         const serverError = { statusCode: 500, message: "Internal server error" };
         mockApi.mockRejectedValue(serverError);
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
 
         await expect(fetchProductBySlug("pla-filament")).rejects.toEqual(serverError);
@@ -230,6 +240,7 @@ describe("fetchProductBySlug() — error handling", () => {
         const notFoundError = { response: { status: 404 } };
         mockApi.mockRejectedValue(notFoundError);
 
+        const { useProducts } = await import("../composables/useProducts");
         const { fetchProductBySlug } = useProducts();
         const result = await fetchProductBySlug("not-found");
 

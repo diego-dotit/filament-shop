@@ -29,6 +29,82 @@ class ProductResourceTest extends TestCase
         $this->assertArrayHasKey('attributes', $data);
         $this->assertArrayHasKey('categories', $data);
         $this->assertArrayHasKey('manufacturers', $data);
+        $this->assertArrayHasKey('locale', $data);
+        $this->assertArrayHasKey('slugs', $data);
+    }
+
+    public function test_product_resource_locale_falls_back_to_app_locale(): void
+    {
+        $product  = $this->makeProduct();
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertSame(app()->getLocale(), $data['locale']);
+    }
+
+    public function test_product_resource_locale_uses_request_lang_code(): void
+    {
+        $product = $this->makeProduct();
+
+        $request = Request::create('/');
+        $langStub = new \stdClass();
+        $langStub->code = 'es';
+        $request->attributes->set('lang', $langStub);
+
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray($request);
+
+        $this->assertSame('es', $data['locale']);
+    }
+
+    public function test_product_resource_slugs_is_empty_array_when_relation_not_loaded(): void
+    {
+        $product  = $this->makeProduct(); // no slugs relation loaded
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertSame([], $data['slugs']);
+    }
+
+    public function test_product_resource_slugs_transforms_loaded_relation(): void
+    {
+        $slugEn = new \App\Domains\Slug\Models\Slug();
+        $slugEn->setRawAttributes(['locale' => 'en', 'slug' => 'pla-filament']);
+
+        $slugEs = new \App\Domains\Slug\Models\Slug();
+        $slugEs->setRawAttributes(['locale' => 'es', 'slug' => 'filamento-pla']);
+
+        $product = $this->makeProduct();
+        $product->setRelation('slugs', collect([$slugEn, $slugEs]));
+
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertSame([
+            ['locale' => 'en', 'slug' => 'pla-filament'],
+            ['locale' => 'es', 'slug' => 'filamento-pla'],
+        ], $data['slugs']);
+    }
+
+    public function test_product_resource_slugs_only_contains_locale_and_slug_keys(): void
+    {
+        $slugEn = new \App\Domains\Slug\Models\Slug();
+        $slugEn->setRawAttributes([
+            'id'             => 99,
+            'sluggable_type' => 'App\\Domains\\Product\\Models\\Product',
+            'sluggable_id'   => 1,
+            'locale'         => 'en',
+            'slug'           => 'pla-filament',
+        ]);
+
+        $product = $this->makeProduct();
+        $product->setRelation('slugs', collect([$slugEn]));
+
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertCount(1, $data['slugs']);
+        $this->assertSame(['locale', 'slug'], array_keys($data['slugs'][0]));
     }
 
     public function test_product_resource_uses_fallback_locale_for_name(): void

@@ -1,11 +1,11 @@
 <template>
-    <div class="flex items-center gap-4 py-4 border-b border-gray-200">
-        <div class="flex-1">
-            <p class="font-semibold mb-1">{{ item.product.name }}</p>
-            <p class="text-xs text-gray-500">{{ item.variant.sku }}</p>
+    <div>
+        <div>
+            <p>{{ item.product.name }}</p>
+            <p>{{ item.variant.sku }}</p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div>
             <Button
                 variant="outline"
                 size="sm"
@@ -15,25 +15,17 @@
             >
                 −
             </Button>
-            <span class="min-w-8 text-center font-semibold">{{ item.quantity }}</span>
+            <span>{{ item.quantity }}</span>
             <Button variant="outline" size="sm" data-testid="increment" @click="increment">
                 +
             </Button>
         </div>
 
-        <div class="min-w-24 text-right">
-            <p class="font-bold">${{ item.line_total.toFixed(2) }}</p>
+        <div>
+            <p>${{ item.line_total.toFixed(2) }}</p>
         </div>
 
-        <Button
-            variant="ghost"
-            size="sm"
-            data-testid="remove"
-            class="text-red-500 hover:text-red-700"
-            @click="remove"
-        >
-            Remove
-        </Button>
+        <Button variant="ghost" size="sm" data-testid="remove" @click="remove"> Remove </Button>
     </div>
 </template>
 

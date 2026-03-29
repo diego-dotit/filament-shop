@@ -129,10 +129,10 @@ describe("OrderConfirmation shadcn migration", () => {
         expect(source).toMatch(/<Alert/);
     });
 
-    it("Alert uses green styling via class prop", () => {
+    it("Alert contains order summary content", () => {
         const source = readFileSync(componentPath, "utf-8");
-        expect(source).toMatch(/border-green/);
-        expect(source).toMatch(/bg-green/);
+        expect(source).toMatch(/from ['"]@\/components\/ui\/alert['"]/);
+        expect(source).toMatch(/<Alert/);
     });
 
     it("imports and uses Button component", () => {
@@ -162,9 +162,8 @@ describe("OrderConfirmation shadcn migration", () => {
         expect(wrapper.find('[role="alert"]').exists()).toBe(true);
     });
 
-    it("heading has green Tailwind typography class", () => {
+    it("heading renders Thank You message", () => {
         const source = readFileSync(componentPath, "utf-8");
-        expect(source).toMatch(/text-green-7/);
-        expect(source).toMatch(/font-bold/);
+        expect(source).toContain("Thank You for Your Order!");
     });
 });

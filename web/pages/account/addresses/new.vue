@@ -1,33 +1,38 @@
 <template>
-    <div class="max-w-xl mx-auto px-4 py-8">
+    <div>
         <Card>
-            <CardContent class="pt-6">
-                <h1 class="text-2xl font-bold mb-6">Add New Address</h1>
-                <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
-                    <div class="flex flex-col gap-1.5">
+            <CardContent>
+                <h1>Add New Address</h1>
+                <form @submit.prevent="handleSubmit">
+                    <div>
                         <Label for="country">Country *</Label>
                         <Input id="country" v-model="form.country" type="text" required />
                     </div>
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="city">City *</Label>
                         <Input id="city" v-model="form.city" type="text" required />
                     </div>
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="address_line_1">Address Line 1 *</Label>
-                        <Input id="address_line_1" v-model="form.address_line_1" type="text" required />
+                        <Input
+                            id="address_line_1"
+                            v-model="form.address_line_1"
+                            type="text"
+                            required
+                        />
                     </div>
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="address_line_2">Address Line 2</Label>
                         <Input id="address_line_2" v-model="form.address_line_2" type="text" />
                     </div>
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="postcode">Postcode *</Label>
                         <Input id="postcode" v-model="form.postcode" type="text" required />
                     </div>
                     <Alert v-if="error" variant="destructive">
                         <AlertDescription>{{ error }}</AlertDescription>
                     </Alert>
-                    <div class="flex items-center gap-4 mt-2">
+                    <div>
                         <Button type="submit" :disabled="submitting">
                             {{ submitting ? "Saving..." : "Save Address" }}
                         </Button>

@@ -42,12 +42,26 @@ class ProductResource extends JsonResource
             'manufacturers'      => $this->resource->relationLoaded('manufacturers')
                 ? $this->manufacturers->map(fn ($m) => ['id' => $m->id, 'name' => $m->name])
                 : [],
+            'locale'             => $this->resolveLang($request),
+            'slugs'              => $this->transformSlugs(),
         ];
     }
 
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+
+    private function transformSlugs(): array
+    {
+        if (! $this->resource->relationLoaded('slugs')) {
+            return [];
+        }
+
+        return $this->resource->slugs->map(fn ($slug) => [
+            'locale' => $slug->locale,
+            'slug'   => $slug->slug,
+        ])->values()->toArray();
+    }
 
     private function resolveLang(Request $request): string
     {

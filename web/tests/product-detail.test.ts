@@ -10,6 +10,8 @@ vi.stubGlobal("computed", computed);
 
 vi.stubGlobal("useState", <T>(_key: string, init: () => T) => ref<T>(init()));
 
+vi.stubGlobal("definePageMeta", vi.fn());
+
 vi.stubGlobal("useApi", () => vi.fn());
 
 const mockCreateError = vi.fn((opts: { statusCode: number; statusMessage?: string }) => {
@@ -57,8 +59,29 @@ const makeProduct = (overrides: Record<string, unknown> = {}) => ({
 // Default stubs
 // ---------------------------------------------------------------------------
 
+/**
+ * Stub shadcn Select components as native <select>/<option> so tests that
+ * assert on select/option elements continue to work after the shadcn migration.
+ */
 const globalStubs = {
     NuxtLink: { template: "<a><slot /></a>" },
+    // Shadcn Select → render as a plain wrapper (v-model passes through via value prop)
+    Select: {
+        props: ["modelValue"],
+        template: '<div class="select-stub"><slot /></div>',
+    },
+    SelectTrigger: { template: "<div><slot /></div>" },
+    SelectValue: { template: "<span><slot /></span>" },
+    SelectContent: { template: "<div><slot /></div>" },
+    // SelectItem → render as <option> so findAll("option") works
+    SelectItem: {
+        props: ["value"],
+        template: '<option :value="value"><slot /></option>',
+    },
+    SelectScrollUpButton: { template: "<span />" },
+    SelectScrollDownButton: { template: "<span />" },
+    // ReviewForm stub — keeps gallery/review tests lean
+    ReviewForm: { template: "<div data-testid='review-form-stub'></div>" },
 };
 
 // ---------------------------------------------------------------------------
@@ -186,10 +209,9 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Should show a select or radio inputs for variants
-        const hasSelect = wrapper.find("select").exists();
+        // SelectItem is stubbed as <option> so we can assert options exist
         const hasOptions = wrapper.findAll("option").length > 0;
-        expect(hasSelect || hasOptions).toBe(true);
+        expect(hasOptions).toBe(true);
     });
 
     // ── Add to cart ──────────────────────────────────────────────────────────
@@ -254,9 +276,11 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const primaryImg = wrapper.find(".gallery__primary");
-        expect(primaryImg.exists()).toBe(true);
-        expect(primaryImg.attributes("src")).toBe("https://example.com/image1.jpg");
+        // Primary image has alt = product.name (no BEM class after shadcn migration)
+        const primaryImg = wrapper.findAll("img").find((img) => img.attributes("alt") === "PLA Filament");
+        expect(primaryImg).toBeDefined();
+        expect(primaryImg!.exists()).toBe(true);
+        expect(primaryImg!.attributes("src")).toBe("https://example.com/image1.jpg");
     });
 
     it("renders all images as thumbnails with correct alt text", async () => {
@@ -268,7 +292,10 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const thumbnails = wrapper.findAll(".gallery__thumbnail");
+        // Thumbnails iterate over product.images with alt="${name} thumbnail N"
+        const thumbnails = wrapper.findAll("img").filter((img) =>
+            img.attributes("alt")?.includes("thumbnail")
+        );
         expect(thumbnails).toHaveLength(2);
         expect(thumbnails[0].attributes("alt")).toBe("PLA Filament thumbnail 1");
         expect(thumbnails[1].attributes("alt")).toBe("PLA Filament thumbnail 2");
@@ -283,13 +310,16 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Click the second thumbnail
-        const thumbnails = wrapper.findAll(".gallery__thumbnail");
+        // Click the second thumbnail (has click handler @click="selectedImage = image")
+        const thumbnails = wrapper.findAll("img").filter((img) =>
+            img.attributes("alt")?.includes("thumbnail")
+        );
         await thumbnails[1].trigger("click");
         await wrapper.vm.$nextTick();
 
-        const primaryImg = wrapper.find(".gallery__primary");
-        expect(primaryImg.attributes("src")).toBe("https://example.com/image2.jpg");
+        // After click, primary image (alt = product.name) should show image2
+        const primaryImg = wrapper.findAll("img").find((img) => img.attributes("alt") === "PLA Filament");
+        expect(primaryImg!.attributes("src")).toBe("https://example.com/image2.jpg");
     });
 
     it("marks the active thumbnail with the active CSS class", async () => {
@@ -301,8 +331,10 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Initially first thumbnail should be active
-        const thumbnails = wrapper.findAll(".gallery__thumbnail");
+        // Initially first thumbnail should be active (selectedImage === images[0])
+        const thumbnails = wrapper.findAll("img").filter((img) =>
+            img.attributes("alt")?.includes("thumbnail")
+        );
         expect(thumbnails[0].classes()).toContain("gallery__thumbnail--active");
         expect(thumbnails[1].classes()).not.toContain("gallery__thumbnail--active");
     });
@@ -317,7 +349,9 @@ describe("Product detail page ([slug].vue)", () => {
         await wrapper.vm.$nextTick();
 
         expect(wrapper.text()).toContain("No images available");
-        expect(wrapper.find(".gallery__primary").exists()).toBe(false);
+        // No primary image should exist (template uses v-if on images.length > 0)
+        const primaryImg = wrapper.findAll("img").find((img) => img.attributes("alt") === "PLA Filament");
+        expect(primaryImg).toBeUndefined();
     });
 
     it("renders the gallery correctly for a product with a single image", async () => {
@@ -329,11 +363,16 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const primaryImg = wrapper.find(".gallery__primary");
-        expect(primaryImg.exists()).toBe(true);
-        expect(primaryImg.attributes("src")).toBe("https://example.com/only.jpg");
+        // Primary image (alt = product.name)
+        const primaryImg = wrapper.findAll("img").find((img) => img.attributes("alt") === "PLA Filament");
+        expect(primaryImg).toBeDefined();
+        expect(primaryImg!.exists()).toBe(true);
+        expect(primaryImg!.attributes("src")).toBe("https://example.com/only.jpg");
 
-        const thumbnails = wrapper.findAll(".gallery__thumbnail");
+        // One thumbnail
+        const thumbnails = wrapper.findAll("img").filter((img) =>
+            img.attributes("alt")?.includes("thumbnail")
+        );
         expect(thumbnails).toHaveLength(1);
         expect(thumbnails[0].attributes("alt")).toBe("PLA Filament thumbnail 1");
     });
@@ -546,7 +585,8 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const breadcrumb = wrapper.find("nav.breadcrumb");
+        // After shadcn migration, Breadcrumb renders <nav aria-label="breadcrumb">
+        const breadcrumb = wrapper.find('nav[aria-label="breadcrumb"]');
         expect(breadcrumb.exists()).toBe(true);
     });
 
@@ -565,8 +605,9 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Breadcrumb always includes a "Home" link first; category link is after that
-        const categoryLinks = wrapper.findAll(".breadcrumb__link");
+        // Breadcrumb always includes a "Home" link first; category link is after that.
+        // After shadcn migration, links are <a> elements inside nav[aria-label="breadcrumb"].
+        const categoryLinks = wrapper.findAll('nav[aria-label="breadcrumb"] a');
         // Home link + 1 category link = 2 total
         expect(categoryLinks.length).toBe(2);
         expect(categoryLinks[1].text()).toContain("PLA Filaments");
@@ -587,7 +628,8 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const currentItem = wrapper.find(".breadcrumb__current");
+        // After shadcn migration, BreadcrumbPage renders <span aria-current="page">
+        const currentItem = wrapper.find('span[aria-current="page"]');
         expect(currentItem.exists()).toBe(true);
         expect(currentItem.text()).toBe("PLA Filament");
     });
@@ -603,10 +645,10 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const breadcrumb = wrapper.find("nav.breadcrumb");
+        const breadcrumb = wrapper.find('nav[aria-label="breadcrumb"]');
         expect(breadcrumb.exists()).toBe(true);
 
-        const currentItem = wrapper.find(".breadcrumb__current");
+        const currentItem = wrapper.find('span[aria-current="page"]');
         expect(currentItem.exists()).toBe(true);
         expect(currentItem.text()).toBe("PLA Filament");
     });
@@ -627,13 +669,13 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        // Home link + 2 category links = 3 total breadcrumb__link elements
-        const links = wrapper.findAll(".breadcrumb__link");
+        // Home link + 2 category links = 3 total <a> elements inside nav
+        const links = wrapper.findAll('nav[aria-label="breadcrumb"] a');
         expect(links.length).toBe(3);
         expect(links[1].text()).toContain("PLA Filaments");
         expect(links[2].text()).toContain("1.75mm");
 
-        const currentItem = wrapper.find(".breadcrumb__current");
+        const currentItem = wrapper.find('span[aria-current="page"]');
         expect(currentItem.text()).toBe("PLA Filament");
     });
 
@@ -654,9 +696,9 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const breadcrumb = wrapper.find("nav.breadcrumb");
+        const breadcrumb = wrapper.find('nav[aria-label="breadcrumb"]');
         expect(breadcrumb.exists()).toBe(true);
-        const categoryLinks = wrapper.findAll(".breadcrumb__link");
+        const categoryLinks = wrapper.findAll('nav[aria-label="breadcrumb"] a');
         // Home link + 1 category link = 2
         expect(categoryLinks.length).toBe(2);
         expect(categoryLinks[1].text()).toContain("PLA Filaments");
@@ -678,6 +720,9 @@ describe("Product detail page ([slug].vue)", () => {
                     // Declare `to` as a prop so class stays in $attrs and is
                     // forwarded automatically (inheritAttrs: true is the default).
                     NuxtLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
+                    ...globalStubs,
+                    // Override NuxtLink stub to pass href
+                    NuxtLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
                 },
             },
         });
@@ -685,7 +730,7 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const links = wrapper.findAll(".breadcrumb__link");
+        const links = wrapper.findAll('nav[aria-label="breadcrumb"] a');
         // links[0] = Home (/), links[1] = category
         expect(links.length).toBe(2);
         expect(links[1].attributes("href")).toBe("/pla-filaments");
@@ -707,6 +752,9 @@ describe("Product detail page ([slug].vue)", () => {
                     // Declare `to` as a prop so class stays in $attrs and is
                     // forwarded automatically (inheritAttrs: true is the default).
                     NuxtLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
+                    ...globalStubs,
+                    // Override NuxtLink stub to pass href
+                    NuxtLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
                 },
             },
         });
@@ -714,7 +762,7 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        const links = wrapper.findAll(".breadcrumb__link");
+        const links = wrapper.findAll('nav[aria-label="breadcrumb"] a');
         expect(links.length).toBe(2);
         expect(links[1].attributes("href")).toBe("/7");
     });
@@ -751,6 +799,7 @@ describe("Product detail page ([slug].vue)", () => {
         await new Promise((r) => setTimeout(r, 0));
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.find(".product-detail__specs").exists()).toBe(false);
+        // When attributes is empty, the v-if hides the entire specs section (no <dl>)
+        expect(wrapper.find("dl").exists()).toBe(false);
     });
 });

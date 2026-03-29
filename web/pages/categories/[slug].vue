@@ -1,42 +1,36 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 py-8">
+    <div>
         <!-- Breadcrumb navigation -->
-        <Breadcrumb :items="breadcrumbItems" class="mb-6" />
+        <Breadcrumb :items="breadcrumbItems" />
 
         <!-- Error state -->
-        <div v-if="notFound" data-testid="category-error" class="py-12 text-center">
-            <p class="text-gray-600">
+        <div v-if="notFound" data-testid="category-error">
+            <p>
                 Category not found. Please check the URL or go back to the
-                <NuxtLink to="/" class="underline text-primary">homepage</NuxtLink>.
+                <NuxtLink to="/">homepage</NuxtLink>.
             </p>
         </div>
 
         <!-- Loading state -->
-        <div v-else-if="loading" data-testid="category-loading" class="py-12 text-center">
-            <p class="text-gray-500">Loading…</p>
+        <div v-else-if="loading" data-testid="category-loading">
+            <p>Loading…</p>
         </div>
 
         <!-- Category content -->
         <template v-else-if="category">
             <!-- Category header -->
-            <header class="mb-8">
-                <img
-                    v-if="category.image"
-                    :src="category.image"
-                    :alt="category.name"
-                    class="w-full max-h-64 object-cover rounded-lg mb-4"
-                />
-                <h1 class="text-3xl font-bold">{{ category.name }}</h1>
+            <header>
+                <img v-if="category.image" :src="category.image" :alt="category.name" />
+                <h1>{{ category.name }}</h1>
             </header>
 
             <!-- Subcategories -->
             <section
                 v-if="category.children && category.children.length > 0"
-                class="mb-8"
                 data-testid="subcategories"
             >
-                <h2 class="text-lg font-semibold mb-3">Subcategories</h2>
-                <div class="flex flex-wrap gap-2">
+                <h2>Subcategories</h2>
+                <div>
                     <CategoryChip
                         v-for="child in category.children"
                         :key="child.id"
@@ -48,18 +42,14 @@
             </section>
 
             <!-- Products grid -->
-            <section class="mb-8" data-testid="products-section">
-                <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
+            <section data-testid="products-section">
+                <div>
                     <ProductCard v-for="product in products" :key="product.id" :product="product" />
                 </div>
             </section>
 
             <!-- Pagination -->
-            <nav
-                v-if="totalPages > 1"
-                class="flex items-center justify-center gap-4"
-                data-testid="pagination"
-            >
+            <nav v-if="totalPages > 1" data-testid="pagination">
                 <Button
                     variant="outline"
                     :disabled="currentPage <= 1"
@@ -68,7 +58,7 @@
                     Previous
                 </Button>
 
-                <span class="text-sm text-gray-500">Page {{ currentPage }} of {{ totalPages }}</span>
+                <span>Page {{ currentPage }} of {{ totalPages }}</span>
 
                 <Button
                     variant="outline"

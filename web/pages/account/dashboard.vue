@@ -1,58 +1,40 @@
 <template>
-    <div class="max-w-2xl mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6">My Account</h1>
+    <div>
+        <h1>My Account</h1>
 
         <!-- Success message -->
-        <Alert
-            v-if="successMessage"
-            data-testid="success-msg"
-            class="mb-4"
-        >
+        <Alert v-if="successMessage" data-testid="success-msg">
             <AlertDescription>{{ successMessage }}</AlertDescription>
         </Alert>
 
         <!-- Error message -->
-        <Alert
-            v-if="errorMessage"
-            data-testid="error-msg"
-            variant="destructive"
-            class="mb-4"
-        >
+        <Alert v-if="errorMessage" data-testid="error-msg" variant="destructive">
             <AlertDescription>{{ errorMessage }}</AlertDescription>
         </Alert>
 
         <!-- Profile card -->
-        <Card class="mb-6">
+        <Card>
             <CardHeader>
                 <CardTitle>Profile</CardTitle>
             </CardHeader>
             <CardContent>
                 <!-- Display mode -->
-                <div v-if="!isEditing" class="flex flex-col gap-3">
-                    <p v-if="user" data-testid="greeting" class="text-lg font-medium">
+                <div v-if="!isEditing">
+                    <p v-if="user" data-testid="greeting">
                         Welcome, {{ userRecord.first_name }} {{ userRecord.last_name }}
                     </p>
-                    <p v-if="user" class="text-sm text-muted-foreground">{{ user?.email }}</p>
-                    <p v-if="user" class="text-sm text-muted-foreground">{{ userRecord.phone }}</p>
-                    <div class="mt-2">
-                        <Button
-                            data-testid="edit-btn"
-                            variant="outline"
-                            @click="openEdit"
-                        >
+                    <p v-if="user">{{ user?.email }}</p>
+                    <p v-if="user">{{ userRecord.phone }}</p>
+                    <div>
+                        <Button data-testid="edit-btn" variant="outline" @click="openEdit">
                             Edit Profile
                         </Button>
                     </div>
                 </div>
 
                 <!-- Edit form -->
-                <form
-                    v-else
-                    data-testid="edit-form"
-                    class="flex flex-col gap-4"
-                    @submit.prevent="submitEdit"
-                >
-                    <div class="flex flex-col gap-1.5">
+                <form v-else data-testid="edit-form" @submit.prevent="submitEdit">
+                    <div>
                         <Label for="first-name">First Name</Label>
                         <Input
                             id="first-name"
@@ -64,7 +46,7 @@
                         />
                     </div>
 
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="last-name">Last Name</Label>
                         <Input
                             id="last-name"
@@ -76,7 +58,7 @@
                         />
                     </div>
 
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="email">Email</Label>
                         <Input
                             id="email"
@@ -88,7 +70,7 @@
                         />
                     </div>
 
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="phone">Phone</Label>
                         <Input
                             id="phone"
@@ -100,7 +82,7 @@
                         />
                     </div>
 
-                    <div class="flex gap-3 mt-2">
+                    <div>
                         <Button type="submit" :disabled="submitting">Save</Button>
                         <Button
                             data-testid="cancel-btn"
@@ -121,12 +103,14 @@
                 <CardTitle>Quick Links</CardTitle>
             </CardHeader>
             <CardContent>
-                <nav class="flex flex-col gap-2">
-                    <Button as-child variant="ghost" class="justify-start">
+                <nav>
+                    <Button as-child variant="ghost">
                         <NuxtLink to="/account/orders" data-testid="nav-orders">My Orders</NuxtLink>
                     </Button>
-                    <Button as-child variant="ghost" class="justify-start">
-                        <NuxtLink to="/account/addresses" data-testid="nav-addresses">Addresses</NuxtLink>
+                    <Button as-child variant="ghost">
+                        <NuxtLink to="/account/addresses" data-testid="nav-addresses"
+                            >Addresses</NuxtLink
+                        >
                     </Button>
                 </nav>
             </CardContent>

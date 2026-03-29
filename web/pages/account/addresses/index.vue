@@ -29,8 +29,13 @@
             <Card v-for="address in addresses" :key="address.id">
                 <CardContent class="flex items-start justify-between gap-4 pt-6">
                     <div class="flex-1">
-                        <p class="text-sm text-gray-700 leading-relaxed">{{ address.address_line_1 }}</p>
-                        <p v-if="address.address_line_2" class="text-sm text-gray-700 leading-relaxed">
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            {{ address.address_line_1 }}
+                        </p>
+                        <p
+                            v-if="address.address_line_2"
+                            class="text-sm text-gray-700 leading-relaxed"
+                        >
                             {{ address.address_line_2 }}
                         </p>
                         <p class="text-sm text-gray-700 leading-relaxed">
@@ -39,12 +44,7 @@
                         <p class="text-sm text-gray-700 leading-relaxed">{{ address.country }}</p>
                     </div>
                     <div class="flex gap-2 items-center flex-shrink-0">
-                        <Button
-                            as-child
-                            variant="outline"
-                            size="sm"
-                            data-testid="edit-address"
-                        >
+                        <Button as-child variant="outline" size="sm" data-testid="edit-address">
                             <NuxtLink :to="`/account/addresses/${address.id}/edit`">Edit</NuxtLink>
                         </Button>
                         <Button

@@ -1,13 +1,13 @@
 <template>
-    <div class="min-h-[60vh] flex items-center justify-center px-4 py-12">
-        <Card class="w-full max-w-sm">
+    <div>
+        <Card>
             <CardHeader>
-                <CardTitle class="text-2xl text-center">Create an Account</CardTitle>
+                <CardTitle>Create an Account</CardTitle>
             </CardHeader>
             <CardContent>
-                <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+                <form @submit.prevent="handleSubmit">
                     <!-- Name -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="name">Name</Label>
                         <Input
                             id="name"
@@ -22,7 +22,7 @@
                     </div>
 
                     <!-- Email -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="email">Email</Label>
                         <Input
                             id="email"
@@ -36,7 +36,7 @@
                     </div>
 
                     <!-- Password -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="password">Password</Label>
                         <Input
                             id="password"
@@ -51,7 +51,7 @@
                     </div>
 
                     <!-- Password Confirmation -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="password_confirmation">Confirm Password</Label>
                         <Input
                             id="password_confirmation"
@@ -65,9 +65,7 @@
                     </div>
 
                     <!-- Inline password mismatch error -->
-                    <p v-if="passwordMismatchError" class="text-sm text-destructive">
-                        Passwords do not match. Please try again.
-                    </p>
+                    <p v-if="passwordMismatchError">Passwords do not match. Please try again.</p>
 
                     <!-- API error -->
                     <Alert v-if="apiError" variant="destructive">
@@ -75,14 +73,14 @@
                     </Alert>
 
                     <!-- Submit -->
-                    <Button type="submit" class="w-full" :disabled="loading">
-                        {{ loading ? 'Registering…' : 'Create Account' }}
+                    <Button type="submit" :disabled="loading">
+                        {{ loading ? "Registering…" : "Create Account" }}
                     </Button>
                 </form>
 
-                <p class="text-center text-sm text-muted-foreground mt-4">
+                <p>
                     Already have an account?
-                    <NuxtLink to="/login" class="underline hover:text-foreground">Login</NuxtLink>
+                    <NuxtLink to="/login">Login</NuxtLink>
                 </p>
             </CardContent>
         </Card>
@@ -163,4 +161,3 @@ async function handleSubmit(): Promise<void> {
     }
 }
 </script>
-

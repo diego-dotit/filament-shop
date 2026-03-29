@@ -1,13 +1,13 @@
 <template>
-    <div class="min-h-[60vh] flex items-center justify-center px-4 py-12">
-        <Card class="w-full max-w-sm">
+    <div>
+        <Card>
             <CardHeader>
-                <CardTitle class="text-2xl text-center">Login</CardTitle>
+                <CardTitle>Login</CardTitle>
             </CardHeader>
             <CardContent>
-                <form class="flex flex-col gap-4" @submit.prevent="handleSubmit">
+                <form @submit.prevent="handleSubmit">
                     <!-- Email field -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="email">Email</Label>
                         <Input
                             id="email"
@@ -17,11 +17,11 @@
                             autocomplete="email"
                             placeholder="you@example.com"
                         />
-                        <p v-if="errors.email" class="text-sm text-destructive">{{ errors.email }}</p>
+                        <p v-if="errors.email">{{ errors.email }}</p>
                     </div>
 
                     <!-- Password field -->
-                    <div class="flex flex-col gap-1.5">
+                    <div>
                         <Label for="password">Password</Label>
                         <Input
                             id="password"
@@ -31,7 +31,7 @@
                             autocomplete="current-password"
                             placeholder="Min. 8 characters"
                         />
-                        <p v-if="errors.password" class="text-sm text-destructive">{{ errors.password }}</p>
+                        <p v-if="errors.password">{{ errors.password }}</p>
                     </div>
 
                     <!-- API-level error (wrong credentials etc.) -->
@@ -40,14 +40,14 @@
                     </Alert>
 
                     <!-- Submit -->
-                    <Button type="submit" class="w-full" :disabled="loading">
-                        {{ loading ? 'Logging in…' : 'Login' }}
+                    <Button type="submit" :disabled="loading">
+                        {{ loading ? "Logging in…" : "Login" }}
                     </Button>
                 </form>
 
-                <p class="text-center text-sm text-muted-foreground mt-4">
+                <p>
                     Don't have an account?
-                    <NuxtLink to="/register" class="underline hover:text-foreground">Register</NuxtLink>
+                    <NuxtLink to="/register">Register</NuxtLink>
                 </p>
             </CardContent>
         </Card>

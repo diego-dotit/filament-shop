@@ -170,66 +170,64 @@ describe("[...slug].vue — category breadcrumb", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tailwind utility classes
+// Tailwind utility classes (updated for T2.2 — static class removal)
 // ---------------------------------------------------------------------------
 
 describe("[...slug].vue — Tailwind classes", () => {
-    it("uses Tailwind responsive grid for product detail layout", () => {
+    it("no longer has static class= for responsive grid (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/md:grid-cols-2/);
+        expect(src).not.toContain('class="grid grid-cols-1 md:grid-cols-2');
     });
 
-    it("uses Tailwind for gallery primary image", () => {
+    it("no longer has static class= on gallery primary image (removed by T2.2)", () => {
         const src = readPage();
-        // Should have object-cover and rounded
-        expect(src).toMatch(/object-cover/);
-        expect(src).toMatch(/rounded/);
+        expect(src).not.toContain('class="w-full max-h-96 object-cover');
     });
 
-    it("uses Tailwind for gallery thumbnails container (flex/gap)", () => {
+    it("no longer has static class= on gallery thumbnails container (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/flex.*gap|gap.*flex/);
+        expect(src).not.toContain('class="flex gap-2 mt-2"');
     });
 
-    it("uses Tailwind border classes for thumbnail active state", () => {
+    it("uses Tailwind border classes for thumbnail active state (dynamic :class preserved)", () => {
         const src = readPage();
         expect(src).toMatch(/border-blue-500/);
         expect(src).toMatch(/border-transparent/);
     });
 
-    it("uses Tailwind text utilities for price", () => {
+    it("no longer has static class= for price typography (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/text-lg|text-xl|font-semibold|font-bold/);
+        expect(src).not.toContain('class="text-lg font-semibold text-gray-900"');
     });
 
-    it("uses Tailwind text-green-600 for in-stock", () => {
+    it("uses Tailwind text-green-600 for in-stock (dynamic :class preserved)", () => {
         const src = readPage();
         expect(src).toMatch(/text-green-600/);
     });
 
-    it("uses Tailwind text-red-600 for out-of-stock", () => {
+    it("uses Tailwind text-red-600 for out-of-stock (dynamic :class preserved)", () => {
         const src = readPage();
         expect(src).toMatch(/text-red-600/);
     });
 
-    it("uses Tailwind grid for specs list", () => {
+    it("no longer has static class= for specs list grid (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/grid-cols-\[max-content/);
+        expect(src).not.toMatch(/class="grid grid-cols-\[max-content/);
     });
 
-    it("uses Tailwind border-t for review/specs section dividers", () => {
+    it("no longer has static class= for review/specs section dividers (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/border-t/);
+        expect(src).not.toContain('class="mt-8 pt-8 border-t border-gray-200"');
     });
 
-    it("uses Tailwind grid for product grid in category page", () => {
+    it("no longer has static class= for product grid (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/grid-cols-\[repeat\(auto-fill/);
+        expect(src).not.toMatch(/class="grid grid-cols-\[repeat\(auto-fill/);
     });
 
-    it("uses Tailwind flex for pagination layout", () => {
+    it("no longer has static class= for pagination flex layout (removed by T2.2)", () => {
         const src = readPage();
-        expect(src).toMatch(/justify-center/);
+        expect(src).not.toContain('class="flex items-center justify-center gap-4 mt-8"');
     });
 });
 
