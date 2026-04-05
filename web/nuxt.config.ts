@@ -4,9 +4,13 @@ export default defineNuxtConfig({
     devtools: { 
         enabled: true 
     },
-    modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt', '@nuxt/icon'],
+    modules: [
+        '@nuxtjs/tailwindcss', 
+        'shadcn-nuxt', 
+        '@nuxt/icon'
+    ],
     shadcn: {
-    prefix: '',
-    componentDir: '@/components/ui'
-  }
+        prefix: '',
+        componentDir: '@/components/ui',
+    }
 })

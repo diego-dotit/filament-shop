@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "~/assets/css/font.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -121,6 +122,11 @@
 
 @layer components
 {
+    body
+    {
+        font-family: "DMSans", "Courier", sans-serif;
+    }
+
     .container
     {
         @apply w-full max-w-full mx-auto px-4 sm:max-w-160 md:max-w-208 lg:max-w-5xl xl:max-w-7xl;
