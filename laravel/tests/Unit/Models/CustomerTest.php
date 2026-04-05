@@ -33,16 +33,32 @@ class CustomerTest extends TestCase
         $model = new Customer();
 
         $this->assertSame(
-            ['user_id', 'first_name', 'last_name', 'email', 'phone'],
+            ['first_name', 'last_name', 'email', 'phone', 'password'],
             $model->getFillable(),
         );
     }
 
-    public function test_customer_has_user_relationship_method(): void
+    public function test_customer_extends_authenticatable(): void
+    {
+        $customer = new Customer();
+
+        $this->assertInstanceOf(\Illuminate\Foundation\Auth\User::class, $customer);
+    }
+
+    public function test_customer_uses_has_api_tokens_trait(): void
+    {
+        $this->assertContains(
+            \Laravel\Sanctum\HasApiTokens::class,
+            class_uses_recursive(Customer::class),
+        );
+    }
+
+    public function test_customer_password_is_hidden(): void
     {
         $model = new Customer();
 
-        $this->assertTrue(method_exists($model, 'user'));
+        $this->assertContains('password', $model->getHidden());
+        $this->assertContains('remember_token', $model->getHidden());
     }
 
     public function test_customer_has_addresses_relationship_method(): void
