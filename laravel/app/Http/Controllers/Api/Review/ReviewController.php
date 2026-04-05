@@ -43,22 +43,22 @@ class ReviewController extends Controller
      * Submits a new review for the given product by the authenticated customer.
      * The product_id is injected from the route into the request before validation.
      */
-    public function store(StoreReviewRequest $request, int $productId): \Illuminate\Http\JsonResponse
+    public function store(StoreReviewRequest $request, int $productId): JsonResponse
     {
-        $customer = auth()->user()->customer;
+        $customer = $request->user();
 
         try {
             $review = Review::create([
-                'product_id'  => $productId,
+                'product_id' => $productId,
                 'customer_id' => $customer->id,
-                'rating'      => $request->validated()['rating'],
-                'comment'     => $request->validated()['comment'] ?? null,
-                'status'      => 'pending',
+                'rating' => $request->validated()['rating'],
+                'comment' => $request->validated()['comment'] ?? null,
+                'status' => 'pending',
             ]);
         } catch (UniqueConstraintViolationException) {
             return response()->json([
                 'message' => 'The given data was invalid.',
-                'errors'  => [
+                'errors' => [
                     'product_id' => ['You have already reviewed this product.'],
                 ],
             ], 422);

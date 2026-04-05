@@ -28,11 +28,7 @@ class CartController extends Controller
 
     public function show(Request $request): JsonResource|JsonResponse
     {
-        $customer = $request->user()->customer;
-
-        if (! $customer) {
-            return response()->json(['data' => ['items' => [], 'total' => '0.00']]);
-        }
+        $customer = $request->user();
 
         $cart = $customer->cart;
 
@@ -51,9 +47,9 @@ class CartController extends Controller
 
     public function addItem(StoreCartItemRequest $request): JsonResource|JsonResponse
     {
-        $customer  = $request->user()->customer;
+        $customer = $request->user();
         $variantId = (int) $request->validated('product_variant_id');
-        $quantity  = (int) $request->validated('quantity');
+        $quantity = (int) $request->validated('quantity');
 
         /** @var ProductVariant $variant */
         $variant = ProductVariant::find($variantId);
@@ -84,7 +80,7 @@ class CartController extends Controller
     public function updateItem(UpdateCartItemRequest $request, int $cartItemId): JsonResource|JsonResponse
     {
         $cartItem = CartItem::with('cart')->findOrFail($cartItemId);
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
         if ($cartItem->cart->customer_id !== $customer->id) {
             return ApiResponse::error('forbidden', 'Forbidden.', 403);
@@ -96,6 +92,7 @@ class CartController extends Controller
             $cart = $cartItem->cart;
             $cartItem->delete();
             $cart->load(['items.productVariant', 'items.product']);
+
             return new CartResource($cart);
         }
 
@@ -114,7 +111,7 @@ class CartController extends Controller
     public function removeItem(Request $request, int $cartItemId): JsonResource|JsonResponse
     {
         $cartItem = CartItem::with('cart')->findOrFail($cartItemId);
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
         if ($cartItem->cart->customer_id !== $customer->id) {
             return ApiResponse::error('forbidden', 'Forbidden.', 403);

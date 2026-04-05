@@ -17,7 +17,7 @@ class CustomerController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
         return ApiResponse::success((new CustomerResource($customer))->toArray($request));
     }
@@ -28,7 +28,7 @@ class CustomerController extends Controller
      */
     public function update(UpdateCustomerRequest $request): JsonResponse
     {
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
         $customer->update($request->validated());
 

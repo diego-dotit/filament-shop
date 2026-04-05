@@ -19,11 +19,7 @@ class AddressController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $customer = $request->user()->customer;
-
-        if (! $customer) {
-            return ApiResponse::error('customer_not_found', 'Customer profile not found.', 404);
-        }
+        $customer = $request->user();
 
         $addresses = $customer->addresses()->paginate();
 
@@ -38,13 +34,9 @@ class AddressController extends Controller
      */
     public function store(StoreAddressRequest $request): JsonResponse
     {
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
-        if (! $customer) {
-            return ApiResponse::error('customer_not_found', 'Customer profile not found.', 404);
-        }
-
-        $address  = $customer->addresses()->create($request->validated());
+        $address = $customer->addresses()->create($request->validated());
 
         return ApiResponse::success((new CustomerAddressResource($address))->toArray($request), 201);
     }
@@ -55,11 +47,7 @@ class AddressController extends Controller
      */
     public function show(Request $request, CustomerAddress $address): JsonResponse
     {
-        $customer = $request->user()->customer;
-
-        if (! $customer) {
-            return ApiResponse::error('customer_not_found', 'Customer profile not found.', 404);
-        }
+        $customer = $request->user();
 
         if ($customer->id !== $address->customer_id) {
             return ApiResponse::error('forbidden', 'Forbidden.', 403);
@@ -74,11 +62,7 @@ class AddressController extends Controller
      */
     public function update(UpdateAddressRequest $request, CustomerAddress $address): JsonResponse
     {
-        $customer = $request->user()->customer;
-
-        if (! $customer) {
-            return ApiResponse::error('customer_not_found', 'Customer profile not found.', 404);
-        }
+        $customer = $request->user();
 
         if ($customer->id !== $address->customer_id) {
             return ApiResponse::error('forbidden', 'Forbidden.', 403);
@@ -95,11 +79,7 @@ class AddressController extends Controller
      */
     public function destroy(Request $request, CustomerAddress $address): JsonResponse
     {
-        $customer = $request->user()->customer;
-
-        if (! $customer) {
-            return ApiResponse::error('customer_not_found', 'Customer profile not found.', 404);
-        }
+        $customer = $request->user();
 
         if ($customer->id !== $address->customer_id) {
             return ApiResponse::error('forbidden', 'Forbidden.', 403);

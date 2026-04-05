@@ -7,8 +7,8 @@ use App\Domains\Customer\Models\CustomerAddress;
 use App\Domains\CustomerOrder\Exceptions\UnauthorizedAddressException;
 use App\Domains\Order\Models\Order;
 use App\Domains\OrderPlacement\Exceptions\EmptyCartException;
-use App\Domains\ProductOrder\Exceptions\InactiveVariantException;
 use App\Domains\OrderPlacement\OrderPlacementService;
+use App\Domains\ProductOrder\Exceptions\InactiveVariantException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Order\PlaceOrderRequest;
 use App\Http\Resources\Api\Order\OrderResource;
@@ -28,9 +28,9 @@ class OrderController extends Controller
      */
     public function store(PlaceOrderRequest $request): JsonResponse
     {
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
-        $billingAddress  = CustomerAddress::findOrFail($request->billing_address_id);
+        $billingAddress = CustomerAddress::findOrFail($request->billing_address_id);
         $shippingAddress = CustomerAddress::findOrFail($request->shipping_address_id);
 
         // Currency is resolved by ResolveLanguageAndCurrency middleware
@@ -82,8 +82,8 @@ class OrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $customer = $request->user()->customer;
-        $orders   = $customer->orders()
+        $customer = $request->user();
+        $orders = $customer->orders()
             ->orderByDesc('created_at')
             ->paginate();
 
@@ -98,7 +98,7 @@ class OrderController extends Controller
      */
     public function show(Request $request, Order $order): JsonResponse
     {
-        $customer = $request->user()->customer;
+        $customer = $request->user();
 
         if ($order->customer_id !== $customer->id) {
             return ApiResponse::error('forbidden', 'You do not have access to this order.', 403);
