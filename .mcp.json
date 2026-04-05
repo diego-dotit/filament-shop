@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "laravel/vendor/bin/sail",
+            "args": [
+                "artisan",
+                "boost:mcp"
+            ]
+        },
+        "nuxt": {
+            "type": "http",
+            "url": "https://nuxt.com/mcp",
+            "tools": ["*"]
+        }
+    }
+}

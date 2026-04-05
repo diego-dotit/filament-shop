@@ -1,10 +1,19 @@
 {
+    "agents": [
+        "claude_code",
+        "copilot"
+    ],
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": false,
-    "sail": false,
+    "packages": [
+        "filament/filament",
+        "spatie/laravel-medialibrary"
+    ],
+    "sail": true,
     "skills": [
         "laravel-best-practices",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "medialibrary-development"
     ]
 }
