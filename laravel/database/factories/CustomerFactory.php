@@ -16,7 +16,6 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'    => fn () => User::factory(),
             'first_name' => fake()->firstName(),
             'last_name'  => fake()->lastName(),
             'email'      => fake()->unique()->safeEmail(),

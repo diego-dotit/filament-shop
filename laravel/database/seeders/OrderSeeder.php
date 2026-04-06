@@ -16,7 +16,7 @@ class OrderSeeder extends Seeder
      */
     public function run(): void
     {
-        $customer = Customer::whereHas('user', fn ($q) => $q->where('email', 'test@example.com'))
+        $customer = Customer::where('email', 'test@example.com')
             ->first();
 
         if (! $customer) {

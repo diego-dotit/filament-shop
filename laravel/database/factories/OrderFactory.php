@@ -16,7 +16,6 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_id'   => fn () => Customer::factory(),
             'status'        => fake()->randomElement(['pending', 'processing', 'shipped', 'completed', 'cancelled']),
             'total_amount'  => fake()->randomFloat(2, 10, 2000),
             'currency_code' => fake()->randomElement(['USD', 'EUR', 'GBP']),
