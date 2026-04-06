@@ -5,9 +5,10 @@ export default defineNuxtConfig({
         enabled: true 
     },
     modules: [
-        '@nuxtjs/tailwindcss', 
-        'shadcn-nuxt', 
-        '@nuxt/icon'
+      '@nuxtjs/tailwindcss',
+      'shadcn-nuxt',
+      '@nuxt/icon',
+      '@nuxt/fonts'
     ],
     shadcn: {
         prefix: '',

@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/fonts": "^0.14.0",
     "@nuxt/icon": "^2.2.1",
     "@vueuse/core": "^14.2.1",
     "class-variance-authority": "^0.7.1",
