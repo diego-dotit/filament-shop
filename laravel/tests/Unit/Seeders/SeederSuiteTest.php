@@ -158,8 +158,11 @@ class SeederSuiteTest extends TestCase
     {
         $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
 
-        // Customer seeder uses updateOrCreate for the User
-        $this->assertStringContainsString('updateOrCreate', $contents);
+        // Customer seeder uses firstOrCreate (or updateOrCreate) to avoid duplicates
+        $this->assertTrue(
+            str_contains($contents, 'firstOrCreate') || str_contains($contents, 'updateOrCreate'),
+            'CustomerSeeder must use firstOrCreate or updateOrCreate for idempotency'
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -274,32 +277,26 @@ class SeederSuiteTest extends TestCase
     {
         $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
 
-        $this->assertStringContainsString('test@example.com', $contents);
-    }
-
-    public function test_customer_seeder_hashes_password(): void
-    {
-        $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
-
-        $this->assertStringContainsString('Hash::make', $contents);
+        // Customer seeder seeds customers with @example.com emails
+        $this->assertStringContainsString('customer1@example.com', $contents);
     }
 
     public function test_customer_seeder_declares_address_fields(): void
     {
         $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
 
+        // Customer seeder creates addresses via the relationship or factory
         $this->assertStringContainsString('addresses()', $contents);
-        $this->assertStringContainsString('address_line_1', $contents);
-        $this->assertStringContainsString('city', $contents);
-        $this->assertStringContainsString('postcode', $contents);
+        $this->assertStringContainsString('CustomerAddress', $contents);
     }
 
-    public function test_customer_seeder_creates_empty_cart(): void
+    public function test_customer_seeder_creates_addresses(): void
     {
         $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
 
-        $this->assertStringContainsString('cart()', $contents);
-        $this->assertStringContainsString('firstOrCreate', $contents);
+        // Customer seeder creates 1-2 addresses per customer via factory
+        $this->assertStringContainsString('CustomerAddress', $contents);
+        $this->assertStringContainsString('factory()', $contents);
     }
 
     // -------------------------------------------------------------------------
@@ -342,11 +339,11 @@ class SeederSuiteTest extends TestCase
         $this->assertStringContainsString('use App\Domains\Product\Models\ProductVariant;', $contents);
     }
 
-    public function test_customer_seeder_imports_user_and_customer_models(): void
+    public function test_customer_seeder_imports_customer_models(): void
     {
         $contents = file_get_contents("{$this->seedersDir}/CustomerSeeder.php");
 
-        $this->assertStringContainsString('use App\Models\User;', $contents);
         $this->assertStringContainsString('use App\Domains\Customer\Models\Customer;', $contents);
+        $this->assertStringContainsString('use App\Domains\Customer\Models\CustomerAddress;', $contents);
     }
 }

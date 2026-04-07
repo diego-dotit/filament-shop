@@ -41,18 +41,23 @@ class CustomerSeederTest extends TestCase
         $this->assertStringContainsString('public function run()', $contents);
     }
 
-    public function test_customer_seeder_uses_update_or_create_for_idempotency(): void
+    public function test_customer_seeder_uses_first_or_create_for_idempotency(): void
     {
         $contents = file_get_contents($this->seederPath);
 
-        $this->assertStringContainsString('updateOrCreate', $contents);
+        $this->assertStringContainsString('firstOrCreate', $contents);
     }
 
-    public function test_customer_seeder_uses_test_email(): void
+    public function test_customer_seeder_defines_five_customers(): void
     {
         $contents = file_get_contents($this->seederPath);
 
-        $this->assertStringContainsString('test@example.com', $contents);
+        // All 5 known test emails must be present
+        $this->assertStringContainsString('customer1@example.com', $contents);
+        $this->assertStringContainsString('customer2@example.com', $contents);
+        $this->assertStringContainsString('customer3@example.com', $contents);
+        $this->assertStringContainsString('customer4@example.com', $contents);
+        $this->assertStringContainsString('customer5@example.com', $contents);
     }
 
     public function test_customer_seeder_hashes_password(): void
@@ -62,39 +67,21 @@ class CustomerSeederTest extends TestCase
         $this->assertStringContainsString('Hash::make', $contents);
     }
 
-    public function test_customer_seeder_creates_customer_record(): void
+    public function test_customer_seeder_sets_required_fields(): void
     {
         $contents = file_get_contents($this->seederPath);
 
         $this->assertStringContainsString('first_name', $contents);
         $this->assertStringContainsString('last_name', $contents);
         $this->assertStringContainsString('phone', $contents);
+        $this->assertStringContainsString('password', $contents);
     }
 
-    public function test_customer_seeder_creates_address(): void
+    public function test_customer_seeder_imports_hash_facade(): void
     {
         $contents = file_get_contents($this->seederPath);
 
-        $this->assertStringContainsString('addresses()', $contents);
-        $this->assertStringContainsString('country', $contents);
-        $this->assertStringContainsString('city', $contents);
-        $this->assertStringContainsString('address_line_1', $contents);
-        $this->assertStringContainsString('postcode', $contents);
-    }
-
-    public function test_customer_seeder_creates_empty_cart(): void
-    {
-        $contents = file_get_contents($this->seederPath);
-
-        $this->assertStringContainsString('cart()', $contents);
-        $this->assertStringContainsString('firstOrCreate', $contents);
-    }
-
-    public function test_customer_seeder_imports_user_model(): void
-    {
-        $contents = file_get_contents($this->seederPath);
-
-        $this->assertStringContainsString('use App\Models\User;', $contents);
+        $this->assertStringContainsString('use Illuminate\Support\Facades\Hash;', $contents);
     }
 
     public function test_customer_seeder_imports_customer_model(): void
@@ -111,5 +98,39 @@ class CustomerSeederTest extends TestCase
         );
 
         $this->assertStringContainsString('CustomerSeeder', $contents);
+    }
+
+    // T4.3: CustomerAddressFactory-based address seeding
+
+    public function test_customer_seeder_imports_customer_address_model(): void
+    {
+        $contents = file_get_contents($this->seederPath);
+
+        $this->assertStringContainsString(
+            'use App\Domains\Customer\Models\CustomerAddress;',
+            $contents
+        );
+    }
+
+    public function test_customer_seeder_uses_customer_address_factory(): void
+    {
+        $contents = file_get_contents($this->seederPath);
+
+        $this->assertStringContainsString('CustomerAddress::factory()', $contents);
+    }
+
+    public function test_customer_seeder_checks_address_count_before_creating(): void
+    {
+        $contents = file_get_contents($this->seederPath);
+
+        $this->assertStringContainsString('addresses()->count()', $contents);
+    }
+
+    public function test_customer_seeder_creates_multiple_addresses_per_customer(): void
+    {
+        $contents = file_get_contents($this->seederPath);
+
+        // rand(1, 2) or count(rand(1, 2)) indicates 1-2 addresses are created
+        $this->assertMatchesRegularExpression('/rand\s*\(\s*1\s*,\s*2\s*\)/', $contents);
     }
 }

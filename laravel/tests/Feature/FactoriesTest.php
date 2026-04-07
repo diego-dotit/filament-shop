@@ -20,6 +20,7 @@ use App\Domains\Product\Models\ProductVariant;
 use App\Domains\Product\Models\ProductVariantAttribute;
 use App\Domains\Review\Models\Review;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class FactoriesTest extends TestCase
@@ -37,6 +38,9 @@ class FactoriesTest extends TestCase
         $this->assertDatabaseHas('customers', ['id' => $customer->id]);
         $this->assertNotEmpty($customer->first_name);
         $this->assertNotEmpty($customer->email);
+        $this->assertNotNull($customer->password);
+        $this->assertNotEmpty($customer->password);
+        $this->assertTrue(Hash::check('password', $customer->password));
     }
 
     public function test_customer_factory_make_does_not_persist(): void
