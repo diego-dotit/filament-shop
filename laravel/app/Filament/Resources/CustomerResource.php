@@ -12,6 +12,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class CustomerResource extends Resource
 {
@@ -53,6 +54,22 @@ class CustomerResource extends Resource
 
                         Forms\Components\TextInput::make('phone')
                             ->tel()
+                            ->maxLength(255),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Password')
+                    ->schema([
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->confirmed()
+                            ->required(fn (?Model $record): bool => $record === null)
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('password_confirmation')
+                            ->password()
+                            ->dehydrated(false)
+                            ->required(fn (?Model $record): bool => $record === null)
                             ->maxLength(255),
                     ])
                     ->columns(2),
@@ -126,9 +143,10 @@ class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCustomers::route('/'),
-            'view'   => Pages\ViewCustomer::route('/{record}'),
-            'edit'   => Pages\EditCustomer::route('/{record}/edit'),
+            'index' => Pages\ListCustomers::route('/'),
+            'create' => Pages\CreateCustomer::route('/create'),
+            'view' => Pages\ViewCustomer::route('/{record}'),
+            'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
 }

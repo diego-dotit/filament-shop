@@ -17,4 +17,22 @@ class EditCustomer extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    /**
+     * Hash the password before saving if provided; omit it entirely if left blank.
+     * password_confirmation is already excluded via dehydrated(false) in the form schema.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (filled($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        return $data;
+    }
 }
