@@ -14,7 +14,6 @@ use App\Domains\OrderPlacement\Exceptions\EmptyCartException;
 use App\Domains\OrderPlacement\OrderPlacementService;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,12 +32,9 @@ class OrderPlacementServiceTest extends TestCase
 
     private function createCustomer(array $overrides = []): Customer
     {
-        $user = User::factory()->create();
-
-        return $user->customer()->create(array_merge([
+        return Customer::factory()->create(array_merge([
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '5550001111',
         ], $overrides));
     }
@@ -269,11 +265,9 @@ class OrderPlacementServiceTest extends TestCase
     public function test_place_order_propagates_unauthorized_address_exception(): void
     {
         $customer      = $this->createCustomer();
-        $otherUser     = User::factory()->create();
-        $otherCustomer = $otherUser->customer()->create([
+        $otherCustomer = Customer::factory()->create([
             'first_name' => 'Other',
             'last_name'  => 'Guy',
-            'email'      => $otherUser->email,
             'phone'      => '9990001111',
         ]);
 

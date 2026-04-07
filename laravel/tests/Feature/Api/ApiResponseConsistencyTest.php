@@ -36,14 +36,9 @@ class ApiResponseConsistencyTest extends TestCase
 
     public function test_login_success_response_includes_success_true(): void
     {
-        $user = User::factory()->create([
+        User::factory()->create([
             'email'    => 'login@example.com',
             'password' => bcrypt('password123'),
-        ]);
-        $user->customer()->create([
-            'first_name' => 'Login',
-            'last_name'  => 'User',
-            'email'      => 'login@example.com',
         ]);
 
         $response = $this->postJson('/api/auth/login', [
@@ -77,12 +72,7 @@ class ApiResponseConsistencyTest extends TestCase
 
     public function test_me_endpoint_response_includes_success_true(): void
     {
-        $user = User::factory()->create();
-        $user->customer()->create([
-            'first_name' => 'Me',
-            'last_name'  => 'User',
-            'email'      => $user->email,
-        ]);
+        $user  = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
 
         $response = $this->getJson('/api/auth/me', [
@@ -99,13 +89,11 @@ class ApiResponseConsistencyTest extends TestCase
 
     public function test_customer_profile_response_includes_success_true(): void
     {
-        $user = User::factory()->create();
-        $user->customer()->create([
+        $customer = Customer::factory()->create([
             'first_name' => 'Profile',
             'last_name'  => 'User',
-            'email'      => $user->email,
         ]);
-        $token = $user->createToken('api')->plainTextToken;
+        $token = $customer->createToken('api')->plainTextToken;
 
         $response = $this->getJson('/api/customers/me', [
             'Authorization' => "Bearer {$token}",

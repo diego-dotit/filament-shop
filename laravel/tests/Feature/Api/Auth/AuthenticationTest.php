@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api\Auth;
 
-use App\Domains\Customer\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -29,14 +28,12 @@ class AuthenticationTest extends TestCase
                 'message',
                 'data' => [
                     'id',
-                    'first_name',
-                    'last_name',
+                    'name',
                     'email',
                 ],
             ]);
 
         $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
-        $this->assertDatabaseHas('customers', ['email' => 'jane@example.com', 'first_name' => 'Jane']);
     }
 
     public function test_register_validates_name_is_required(): void
@@ -102,11 +99,6 @@ class AuthenticationTest extends TestCase
             'email'    => 'user@example.com',
             'password' => bcrypt('password123'),
         ]);
-        $user->customer()->create([
-            'first_name' => 'John',
-            'last_name'  => 'Smith',
-            'email'      => 'user@example.com',
-        ]);
 
         $response = $this->postJson('/api/auth/login', [
             'email'    => 'user@example.com',
@@ -118,8 +110,7 @@ class AuthenticationTest extends TestCase
                 'token',
                 'data' => [
                     'id',
-                    'first_name',
-                    'last_name',
+                    'name',
                     'email',
                 ],
             ]);
@@ -149,13 +140,7 @@ class AuthenticationTest extends TestCase
 
     public function test_me_endpoint_returns_authenticated_user_with_customer_details(): void
     {
-        $user = User::factory()->create();
-        $user->customer()->create([
-            'first_name' => 'Alice',
-            'last_name'  => 'Wonder',
-            'email'      => $user->email,
-        ]);
-
+        $user  = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
 
         $response = $this->getJson('/api/auth/me', [
@@ -166,12 +151,11 @@ class AuthenticationTest extends TestCase
             ->assertJsonStructure([
                 'data' => [
                     'id',
-                    'first_name',
-                    'last_name',
+                    'name',
                     'email',
                 ],
             ])
-            ->assertJsonPath('data.first_name', 'Alice');
+            ->assertJsonPath('data.email', $user->email);
     }
 
     public function test_me_endpoint_requires_authentication(): void

@@ -27,9 +27,7 @@ class EditCustomer extends EditRecord
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (filled($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        } else {
+        if (! filled($data['password'])) {
             unset($data['password']);
         }
 

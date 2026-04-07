@@ -10,7 +10,6 @@ use App\Domains\CartProduct\Exceptions\InsufficientStockException;
 use App\Domains\Customer\Models\Customer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,12 +31,9 @@ class CartProductConnectorServiceTest extends TestCase
 
     private function createCustomer(): Customer
     {
-        $user = User::factory()->create();
-
-        return $user->customer()->create([
+        return Customer::factory()->create([
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '0000000000',
         ]);
     }

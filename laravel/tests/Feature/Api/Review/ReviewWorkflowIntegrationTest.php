@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Review;
 
+use App\Domains\Customer\Models\Customer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Review\Models\Review;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
@@ -18,15 +19,13 @@ class ReviewWorkflowIntegrationTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createProduct(array $overrides = []): Product
@@ -49,7 +48,7 @@ class ReviewWorkflowIntegrationTest extends TestCase
         $admin             = User::factory()->create();
 
         // ── Step 2: Authenticated customer submits review ─────────────────────
-        $submitResponse = $this->actingAs($user, 'sanctum')
+        $submitResponse = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating'  => 5,
                 'comment' => 'Absolutely love this product!',

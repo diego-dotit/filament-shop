@@ -165,14 +165,6 @@ class RouteRegistrationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // /api/auth/me serialises the linked Customer record — create it so the
-        // controller does not encounter a null resource.
-        $user->customer()->create([
-            'first_name' => 'Test',
-            'last_name'  => 'User',
-            'email'      => $user->email,
-        ]);
-
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/auth/me');
 

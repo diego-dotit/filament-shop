@@ -3,6 +3,7 @@
 namespace App\Domains\Customer\Models;
 
 use App\Domains\Cart\Models\Cart;
+use App\Domains\Customer\Models\CustomerAddress;
 use App\Domains\Order\Models\Order;
 use App\Domains\Review\Models\Review;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

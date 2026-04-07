@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\Customer;
 
 use App\Domains\Customer\Models\Customer;
 use App\Domains\Customer\Models\CustomerAddress;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,15 +13,14 @@ class AddressTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'John',
             'last_name'  => 'Doe',
             'email'      => 'john@example.com',
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createAddress(Customer $customer, array $data = []): CustomerAddress
@@ -61,7 +59,7 @@ class AddressTest extends TestCase
         $this->createAddress($customer);
         $this->createAddress($customer, ['city' => 'Los Angeles', 'postcode' => '90001']);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/customers/me/addresses');
 
         $response->assertStatus(200)
@@ -83,7 +81,7 @@ class AddressTest extends TestCase
         $this->createAddress($customer);
         $this->createAddress($otherCustomer, ['city' => 'Miami']);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/customers/me/addresses');
 
         $response->assertStatus(200)
@@ -104,7 +102,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/customers/me/addresses', [
                 'country'        => 'UK',
                 'city'           => 'London',
@@ -132,7 +130,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/customers/me/addresses', $this->validAddressPayload());
 
         $response->assertStatus(201);
@@ -142,7 +140,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/customers/me/addresses', []);
 
         $response->assertStatus(422)
@@ -153,7 +151,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/customers/me/addresses', $this->validAddressPayload(['country' => '']));
 
         $response->assertStatus(422)
@@ -183,7 +181,7 @@ class AddressTest extends TestCase
             'postcode'       => 'SW1A 2AA',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson("/api/customers/me/addresses/{$address->id}");
 
         $response->assertStatus(200)
@@ -201,7 +199,7 @@ class AddressTest extends TestCase
         [$otherUser, $otherCustomer] = $this->createUserWithCustomer(['email' => 'other@example.com']);
         $otherAddress = $this->createAddress($otherCustomer, ['city' => 'Miami']);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson("/api/customers/me/addresses/{$otherAddress->id}");
 
         $response->assertStatus(403);
@@ -211,7 +209,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/customers/me/addresses/99999');
 
         $response->assertStatus(404);
@@ -236,7 +234,7 @@ class AddressTest extends TestCase
         [$user, $customer] = $this->createUserWithCustomer();
         $address = $this->createAddress($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson("/api/customers/me/addresses/{$address->id}", [
                 'city'    => 'Chicago',
                 'postcode' => '60601',
@@ -259,7 +257,7 @@ class AddressTest extends TestCase
         [$otherUser, $otherCustomer] = $this->createUserWithCustomer(['email' => 'other@example.com']);
         $otherAddress = $this->createAddress($otherCustomer, ['city' => 'Miami']);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson("/api/customers/me/addresses/{$otherAddress->id}", [
                 'city' => 'Hacked',
             ]);
@@ -284,7 +282,7 @@ class AddressTest extends TestCase
         [$user, $customer] = $this->createUserWithCustomer();
         $address = $this->createAddress($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->deleteJson("/api/customers/me/addresses/{$address->id}");
 
         $response->assertStatus(204);
@@ -298,7 +296,7 @@ class AddressTest extends TestCase
         [$otherUser, $otherCustomer] = $this->createUserWithCustomer(['email' => 'other@example.com']);
         $otherAddress = $this->createAddress($otherCustomer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->deleteJson("/api/customers/me/addresses/{$otherAddress->id}");
 
         $response->assertStatus(403);
@@ -308,7 +306,7 @@ class AddressTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->deleteJson('/api/customers/me/addresses/99999');
 
         $response->assertStatus(404);

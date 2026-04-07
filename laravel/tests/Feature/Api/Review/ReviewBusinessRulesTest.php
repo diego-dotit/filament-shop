@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Review;
 
+use App\Domains\Customer\Models\Customer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Review\Models\Review;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
@@ -18,15 +19,13 @@ class ReviewBusinessRulesTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createProduct(array $overrides = []): Product
@@ -47,7 +46,7 @@ class ReviewBusinessRulesTest extends TestCase
         $product = $this->createProduct();
 
         // First review succeeds
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating'  => 5,
                 'comment' => 'Great product!',
@@ -60,7 +59,7 @@ class ReviewBusinessRulesTest extends TestCase
         ]);
 
         // Duplicate review for same customer + product returns 422
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 3,
             ]);
@@ -225,12 +224,12 @@ class ReviewBusinessRulesTest extends TestCase
         [$user2, $customer2] = $this->createUserWithCustomer(['email' => 'multi2@example.com']);
 
         // First customer submits a review
-        $this->actingAs($user1, 'sanctum')
+        $this->actingAs($user1, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", ['rating' => 5])
             ->assertStatus(201);
 
         // Second customer submits a review for the same product
-        $this->actingAs($user2, 'sanctum')
+        $this->actingAs($user2, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", ['rating' => 4])
             ->assertStatus(201);
 
@@ -262,7 +261,7 @@ class ReviewBusinessRulesTest extends TestCase
         $productB = $this->createProduct(['slug' => 'product-b-' . uniqid()]);
 
         // Customer reviews product A
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$productA->id}/reviews", [
                 'rating'  => 5,
                 'comment' => 'Love product A!',
@@ -270,7 +269,7 @@ class ReviewBusinessRulesTest extends TestCase
             ->assertStatus(201);
 
         // Same customer reviews product B (different product — this must succeed)
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$productB->id}/reviews", [
                 'rating'  => 4,
                 'comment' => 'Product B is good too!',

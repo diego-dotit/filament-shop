@@ -31,7 +31,7 @@ return new class extends Migration
                     "first_name"        varchar      NOT NULL,
                     "last_name"         varchar      NOT NULL,
                     "email"             varchar      NOT NULL,
-                    "password"          varchar      NOT NULL DEFAULT \'\',
+                    "password"          varchar      NULL     DEFAULT NULL,
                     "remember_token"    varchar(100) NULL,
                     "email_verified_at" datetime     NULL,
                     "phone"             varchar      NULL,
@@ -66,7 +66,7 @@ return new class extends Migration
         Schema::table('customers', function (Blueprint $table) {
             $table->dropColumn('user_id');
             $table->dropIndex(['email']);
-            $table->string('password')->after('email');
+            $table->string('password')->nullable()->after('email');
             $table->rememberToken()->after('password');
             $table->timestamp('email_verified_at')->nullable()->after('remember_token');
             $table->unique('email');

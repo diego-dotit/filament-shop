@@ -29,15 +29,13 @@ class ReviewStatusConsistencyTest extends TestCase
 
     private function createCustomerWithUser(): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create([
+        $customer = Customer::factory()->create([
             'first_name' => 'Test',
             'last_name'  => 'User',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ]);
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     // ── Status String Type Tests ──────────────────────────────────────────────

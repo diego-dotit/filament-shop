@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Api\Customer;
 
-use App\Models\User;
+use App\Domains\Customer\Models\Customer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,15 +12,14 @@ class ProfileTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'John',
             'last_name'  => 'Doe',
             'email'      => 'john@example.com',
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     // ── GET /api/customers/me ─────────────────────────────────────────────────
@@ -36,7 +35,7 @@ class ProfileTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/customers/me');
 
         $response->assertStatus(200)
@@ -53,7 +52,7 @@ class ProfileTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/customers/me');
 
         $response->assertStatus(200)
@@ -77,7 +76,7 @@ class ProfileTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson('/api/customers/me', [
                 'first_name' => 'Jane',
                 'last_name'  => 'Smith',
@@ -103,7 +102,7 @@ class ProfileTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson('/api/customers/me', [
                 'first_name' => 'UpdatedName',
             ]);
@@ -117,7 +116,7 @@ class ProfileTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson('/api/customers/me', [
                 'email' => 'not-an-email',
             ]);

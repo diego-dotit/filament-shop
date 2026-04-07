@@ -10,7 +10,6 @@ use App\Domains\Customer\Models\CustomerAddress;
 use App\Domains\Order\Models\Order;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,15 +44,13 @@ class OrderTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'John',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createAddress(Customer $customer, array $data = []): CustomerAddress
@@ -141,7 +138,7 @@ class OrderTest extends TestCase
         $customer->cart()->create([]);
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(422)
@@ -153,7 +150,7 @@ class OrderTest extends TestCase
         [$user, $customer] = $this->createUserWithCustomer();
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(422)
@@ -173,7 +170,7 @@ class OrderTest extends TestCase
         $otherBilling  = $this->createAddress($otherCust, ['city' => 'OtherCity']);
         $ownShipping   = $this->createAddress($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', [
                 'billing_address_id'  => $otherBilling->id,
                 'shipping_address_id' => $ownShipping->id,
@@ -192,7 +189,7 @@ class OrderTest extends TestCase
         $ownBilling    = $this->createAddress($customer);
         $otherShipping = $this->createAddress($otherCust, ['city' => 'OtherCity']);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', [
                 'billing_address_id'  => $ownBilling->id,
                 'shipping_address_id' => $otherShipping->id,
@@ -226,7 +223,7 @@ class OrderTest extends TestCase
 
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(422)
@@ -243,7 +240,7 @@ class OrderTest extends TestCase
         $cart = $this->createCartWithItems($customer, 1);
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(201)
@@ -283,7 +280,7 @@ class OrderTest extends TestCase
 
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(201);
@@ -319,7 +316,7 @@ class OrderTest extends TestCase
             'postcode'       => '20500',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', [
                 'billing_address_id'  => $billing->id,
                 'shipping_address_id' => $shipping->id,
@@ -342,7 +339,7 @@ class OrderTest extends TestCase
 
         $this->assertSame(2, $cart->items()->count());
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload)
             ->assertStatus(201);
 
@@ -355,11 +352,11 @@ class OrderTest extends TestCase
         $this->createCartWithItems($customer, 1);
         $payload = $this->validOrderPayload($customer);
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload)
             ->assertStatus(201);
 
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->getJson('/api/cart')
             ->assertStatus(200)
             ->assertJsonPath('data.items', []);
@@ -383,7 +380,7 @@ class OrderTest extends TestCase
             'postcode'       => '20002',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', [
                 'billing_address_id'  => $billing->id,
                 'shipping_address_id' => $shipping->id,
@@ -418,7 +415,7 @@ class OrderTest extends TestCase
         $this->createCartWithItems($customer);
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(201);
@@ -443,7 +440,7 @@ class OrderTest extends TestCase
         $this->createCartWithItems($customer);
         $payload = $this->validOrderPayload($customer);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/orders', $payload);
 
         $response->assertStatus(503)
@@ -483,7 +480,7 @@ class OrderTest extends TestCase
             'exchange_rate' => '1.000000',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/orders');
 
         $response->assertStatus(200)
@@ -515,7 +512,7 @@ class OrderTest extends TestCase
             'exchange_rate' => '1.000000',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/orders');
 
         $response->assertStatus(200)
@@ -563,7 +560,7 @@ class OrderTest extends TestCase
             'postcode'       => '10001',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson("/api/orders/{$order->id}");
 
         $response->assertStatus(200)
@@ -601,7 +598,7 @@ class OrderTest extends TestCase
             'exchange_rate' => '1.000000',
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson("/api/orders/{$otherOrder->id}");
 
         $response->assertStatus(403);
@@ -611,7 +608,7 @@ class OrderTest extends TestCase
     {
         [$user, $customer] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/orders/99999');
 
         $response->assertStatus(404);

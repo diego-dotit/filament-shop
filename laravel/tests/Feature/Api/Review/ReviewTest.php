@@ -5,7 +5,6 @@ namespace Tests\Feature\Api\Review;
 use App\Domains\Customer\Models\Customer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Review\Models\Review;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,15 +16,13 @@ class ReviewTest extends TestCase
 
     private function createUserWithCustomer(array $customerData = []): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create(array_merge([
+        $customer = Customer::factory()->create(array_merge([
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ], $customerData));
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createProduct(array $overrides = []): Product
@@ -56,7 +53,7 @@ class ReviewTest extends TestCase
         [$user, $customer] = $this->createUserWithCustomer();
         $product           = $this->createProduct();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating'  => 4,
                 'comment' => 'Great product!',
@@ -85,7 +82,7 @@ class ReviewTest extends TestCase
         $product           = $this->createProduct();
 
         // Even when 'status' => 'approved' is sent in request, it must be ignored
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 5,
                 'status' => 'approved',
@@ -107,7 +104,7 @@ class ReviewTest extends TestCase
         $product           = $this->createProduct();
 
         // Submit a review — it starts as pending
-        $this->actingAs($user, 'sanctum')
+        $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating'  => 5,
                 'comment' => 'Wonderful!',
@@ -137,7 +134,7 @@ class ReviewTest extends TestCase
         [$user, $customer] = $this->createUserWithCustomer();
         $product           = $this->createProduct();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 3,
             ]);
@@ -151,7 +148,7 @@ class ReviewTest extends TestCase
         [$user] = $this->createUserWithCustomer();
         $product = $this->createProduct();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", []);
 
         $response->assertStatus(422)
@@ -163,7 +160,7 @@ class ReviewTest extends TestCase
         [$user] = $this->createUserWithCustomer();
         $product = $this->createProduct();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 0,
             ]);
@@ -177,7 +174,7 @@ class ReviewTest extends TestCase
         [$user] = $this->createUserWithCustomer();
         $product = $this->createProduct();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 6,
             ]);
@@ -199,7 +196,7 @@ class ReviewTest extends TestCase
         ]);
 
         // Attempt second review for the same product
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson("/api/products/{$product->id}/reviews", [
                 'rating' => 3,
             ]);
@@ -212,7 +209,7 @@ class ReviewTest extends TestCase
     {
         [$user] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/products/99999/reviews', [
                 'rating' => 5,
             ]);

@@ -7,7 +7,6 @@ use App\Domains\Cart\Models\CartItem;
 use App\Domains\Customer\Models\Customer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,15 +20,13 @@ class CartTest extends TestCase
 
     private function createUserWithCustomer(): array
     {
-        $user     = User::factory()->create();
-        $customer = $user->customer()->create([
+        $customer = Customer::factory()->create([
             'first_name' => 'John',
             'last_name'  => 'Doe',
-            'email'      => $user->email,
             'phone'      => '1234567890',
         ]);
 
-        return [$user, $customer];
+        return [$customer, $customer];
     }
 
     private function createActiveVariant(int $stock = 10, float $price = 19.99): ProductVariant
@@ -82,7 +79,7 @@ class CartTest extends TestCase
     {
         [$user] = $this->createUserWithCustomer();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/cart');
 
         $response->assertStatus(200)
@@ -101,7 +98,7 @@ class CartTest extends TestCase
             'quantity'           => 2,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/cart');
 
         $response->assertStatus(200)
@@ -136,7 +133,7 @@ class CartTest extends TestCase
 
         $this->assertNull($customer->cart);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/cart/items', [
                 'product_variant_id' => $variant->id,
                 'quantity'           => 1,
@@ -163,7 +160,7 @@ class CartTest extends TestCase
             'quantity'           => 3,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/cart/items', [
                 'product_variant_id' => $variant->id,
                 'quantity'           => 2,
@@ -184,7 +181,7 @@ class CartTest extends TestCase
         [$user] = $this->createUserWithCustomer();
         $variant = $this->createInactiveVariant();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/cart/items', [
                 'product_variant_id' => $variant->id,
                 'quantity'           => 1,
@@ -199,7 +196,7 @@ class CartTest extends TestCase
         [$user] = $this->createUserWithCustomer();
         $variant = $this->createActiveVariant(stock: 3);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/cart/items', [
                 'product_variant_id' => $variant->id,
                 'quantity'           => 10,
@@ -220,7 +217,7 @@ class CartTest extends TestCase
             'quantity'           => 4,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->postJson('/api/cart/items', [
                 'product_variant_id' => $variant->id,
                 'quantity'           => 3,
@@ -252,7 +249,7 @@ class CartTest extends TestCase
             'quantity'           => 1,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson("/api/cart/items/{$item->id}", ['quantity' => 4]);
 
         $response->assertStatus(200)
@@ -279,7 +276,7 @@ class CartTest extends TestCase
             'quantity'           => 1,
         ]);
 
-        $response = $this->actingAs($attacker, 'sanctum')
+        $response = $this->actingAs($attacker, 'customers')
             ->putJson("/api/cart/items/{$item->id}", ['quantity' => 99]);
 
         $response->assertStatus(403);
@@ -296,7 +293,7 @@ class CartTest extends TestCase
             'quantity'           => 3,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->putJson("/api/cart/items/{$item->id}", ['quantity' => 0]);
 
         $response->assertStatus(200)
@@ -327,7 +324,7 @@ class CartTest extends TestCase
             'quantity'           => 2,
         ]);
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->deleteJson("/api/cart/items/{$item->id}");
 
         $response->assertStatus(200)
@@ -349,7 +346,7 @@ class CartTest extends TestCase
             'quantity'           => 1,
         ]);
 
-        $response = $this->actingAs($attacker, 'sanctum')
+        $response = $this->actingAs($attacker, 'customers')
             ->deleteJson("/api/cart/items/{$item->id}");
 
         $response->assertStatus(403);
@@ -381,7 +378,7 @@ class CartTest extends TestCase
         ]);
 
         // Expected total: $20.00 + $16.50 = $36.50
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->actingAs($user, 'customers')
             ->getJson('/api/cart');
 
         $response->assertStatus(200)
