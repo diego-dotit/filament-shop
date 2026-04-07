@@ -2,11 +2,15 @@
 
 namespace App\Filament\Resources;
 
+use App\Domains\Language\Models\Language;
 use App\Domains\Manufacturer\Models\Manufacturer;
 use App\Filament\Resources\ManufacturerResource\Pages\CreateManufacturer;
 use App\Filament\Resources\ManufacturerResource\Pages\EditManufacturer;
 use App\Filament\Resources\ManufacturerResource\Pages\ListManufacturers;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -32,48 +36,77 @@ class ManufacturerResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\Section::make('Manufacturer Information')
+        $languages = Language::orderByDesc('is_default')->orderBy('name')->get();
+
+        $translationTabs = $languages->map(function (Language $language): Tabs\Tab {
+            return Tabs\Tab::make($language->name)
                 ->schema([
-                    Forms\Components\TextInput::make('name')
+                    Forms\Components\TextInput::make("name_{$language->code}")
                         ->label('Name')
-                        ->required()
+                        ->required($language->is_default)
                         ->maxLength(255)
                         ->live(onBlur: true)
-                        ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state): void {
+                        ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($language): void {
                             $oldStr      = is_string($old) ? $old : '';
                             $stateStr    = is_string($state) ? $state : '';
-                            $currentSlug = $get('slug') ?? '';
+                            $currentSlug = $get("slug_{$language->code}") ?? '';
                             if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
-                                $set('slug', Str::slug($stateStr));
+                                $set("slug_{$language->code}", Str::slug($stateStr));
                             }
                         }),
 
-                    Forms\Components\TextInput::make('slug')
+                    Forms\Components\TextInput::make("slug_{$language->code}")
                         ->label('Slug')
-                        ->required()
                         ->maxLength(255)
+                        ->alphaDash()
                         ->unique(
                             table: 'slugs',
                             column: 'slug',
-                            modifyRuleUsing: function (Unique $rule, ?Model $record): Unique {
-                                if ($record !== null) {
-                                    // Ignore only the current manufacturer's own slug entry.
-                                    // This preserves cross-resource uniqueness (a Product's slug
-                                    // still blocks a Manufacturer from using the same value).
-                                    $rule->where(function ($query) use ($record): void {
-                                        $query->where('sluggable_type', '!=', Manufacturer::class)
-                                            ->orWhere('sluggable_id', '!=', $record->id);
-                                    });
-                                }
-
-                                return $rule;
-                            },
+                            modifyRuleUsing: fn (Unique $rule, ?Model $record): Unique => $rule->ignore(
+                                $record?->getSlugForLocale($language->code)?->id
+                            ),
                         )
-                        ->alphaDash()
-                        ->helperText('Auto-generated from name. Must be unique.'),
-                ])
-                ->columns(2),
+                        ->helperText('Auto-generated from name. You may override manually.'),
+
+                    RichEditor::make("description_{$language->code}")
+                        ->label('Description')
+                        ->nullable()
+                        ->columnSpanFull(),
+
+                    Forms\Components\TextInput::make("meta_title_{$language->code}")
+                        ->label('Meta Title')
+                        ->maxLength(255)
+                        ->nullable(),
+
+                    Forms\Components\TextInput::make("meta_description_{$language->code}")
+                        ->label('Meta Description')
+                        ->maxLength(255)
+                        ->nullable(),
+
+                    Forms\Components\TextInput::make("meta_keywords_{$language->code}")
+                        ->label('Meta Keywords')
+                        ->maxLength(255)
+                        ->nullable(),
+                ]);
+        })->toArray();
+
+        return $form->schema([
+            Forms\Components\Section::make('Translations')
+                ->schema([
+                    Tabs::make('Translations')
+                        ->tabs($translationTabs)
+                        ->columnSpanFull(),
+                ]),
+
+            Forms\Components\Section::make('Thumbnail')
+                ->schema([
+                    SpatieMediaLibraryFileUpload::make('thumbnail')
+                        ->label('Thumbnail Image')
+                        ->collection('thumbnail')
+                        ->image()
+                        ->imageEditor()
+                        ->nullable(),
+                ]),
         ]);
     }
 

@@ -10,6 +10,7 @@ use App\Filament\Resources\Product\Pages\CreateProduct;
 use App\Filament\Resources\Product\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages\ListProducts;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -78,11 +79,25 @@ class ProductResource extends Resource
                         )
                         ->helperText('Auto-generated from name. You may override manually.'),
 
-                    Forms\Components\Textarea::make("description_{$language->code}")
+                    RichEditor::make("description_{$language->code}")
                         ->label('Description')
-                        ->rows(4)
                         ->nullable()
                         ->columnSpanFull(),
+
+                    Forms\Components\TextInput::make("meta_title_{$language->code}")
+                        ->label('Meta Title')
+                        ->maxLength(255)
+                        ->nullable(),
+
+                    Forms\Components\TextInput::make("meta_description_{$language->code}")
+                        ->label('Meta Description')
+                        ->maxLength(255)
+                        ->nullable(),
+
+                    Forms\Components\TextInput::make("meta_keywords_{$language->code}")
+                        ->label('Meta Keywords')
+                        ->maxLength(255)
+                        ->nullable(),
                 ]);
         })->toArray();
 

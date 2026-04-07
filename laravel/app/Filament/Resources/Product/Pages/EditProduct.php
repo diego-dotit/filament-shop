@@ -39,9 +39,12 @@ class EditProduct extends EditRecord
 
         foreach ($languages as $language) {
             $code = $language->code;
-            $data["name_{$code}"]        = $this->record->getTranslation('name', $code, false);
-            $data["description_{$code}"] = $this->record->getTranslation('description', $code, false);
-            $data["slug_{$code}"]        = $this->record->getSlugForLocale($code)?->slug;
+            $data["name_{$code}"]             = $this->record->getTranslation('name', $code, false);
+            $data["description_{$code}"]      = $this->record->getTranslation('description', $code, false);
+            $data["slug_{$code}"]             = $this->record->getSlugForLocale($code)?->slug;
+            $data["meta_title_{$code}"]       = $this->record->getTranslation('meta_title', $code, false);
+            $data["meta_description_{$code}"] = $this->record->getTranslation('meta_description', $code, false);
+            $data["meta_keywords_{$code}"]    = $this->record->getTranslation('meta_keywords', $code, false);
         }
 
         return $data;

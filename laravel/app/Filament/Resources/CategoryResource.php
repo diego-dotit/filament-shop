@@ -9,6 +9,7 @@ use App\Filament\Resources\CategoryResource\Pages\EditCategory;
 use App\Filament\Resources\CategoryResource\Pages\ListCategories;
 use App\Rules\NoCircularCategoryReference;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -50,7 +51,7 @@ class CategoryResource extends Resource
         $record = $form->getRecord();
         $categoryId = $record?->id;
 
-        $defaultLocale  = Language::where('is_default', true)->first()?->code ?? 'en';
+        $defaultLocale = Language::where('is_default', true)->first()?->code ?? 'en';
         $existingSlugId = $record?->slugs()->where('locale', $defaultLocale)->value('id');
 
         return $form->schema([
@@ -68,8 +69,8 @@ class CategoryResource extends Resource
                                         ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($lang): void {
                                             // Auto-generate slug for each locale from its own name field
                                             $currentSlug = $get("slug_{$lang->code}") ?? '';
-                                            $oldStr      = is_string($old) ? $old : '';
-                                            $stateStr    = is_string($state) ? $state : '';
+                                            $oldStr = is_string($old) ? $old : '';
+                                            $stateStr = is_string($state) ? $state : '';
                                             if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
                                                 $set("slug_{$lang->code}", Str::slug($stateStr));
                                             }
@@ -122,6 +123,29 @@ class CategoryResource extends Resource
                                             return $rules;
                                         })
                                         ->helperText('Auto-generated from name. You may override manually.'),
+
+                                    RichEditor::make("description.{$lang->code}")
+                                        ->label("Description ({$lang->code})")
+                                        ->nullable()
+                                        ->columnSpanFull(),
+
+                                    Forms\Components\TextInput::make("meta_title.{$lang->code}")
+                                        ->label("Meta Title ({$lang->code})")
+                                        ->maxLength(255)
+                                        ->nullable()
+                                        ->columnSpanFull(),
+
+                                    Forms\Components\TextInput::make("meta_description.{$lang->code}")
+                                        ->label("Meta Description ({$lang->code})")
+                                        ->maxLength(255)
+                                        ->nullable()
+                                        ->columnSpanFull(),
+
+                                    Forms\Components\TextInput::make("meta_keywords.{$lang->code}")
+                                        ->label("Meta Keywords ({$lang->code})")
+                                        ->maxLength(255)
+                                        ->nullable()
+                                        ->columnSpanFull(),
                                 ])
                             )->all()
                         )
@@ -223,10 +247,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListCategories::route('/'),
+            'index' => ListCategories::route('/'),
             'create' => CreateCategory::route('/create'),
-            'edit'   => EditCategory::route('/{record}/edit'),
+            'edit' => EditCategory::route('/{record}/edit'),
         ];
     }
 }
-

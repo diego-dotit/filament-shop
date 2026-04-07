@@ -265,6 +265,47 @@ class ProductResourceTest extends TestCase
         $this->assertSame([], $data['images'], 'images field must be an empty array when no media exists');
     }
 
+    // ── meta fields ───────────────────────────────────────────────────────
+
+    public function test_product_resource_has_meta_fields(): void
+    {
+        $product  = $this->makeProduct();
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertArrayHasKey('meta_title', $data);
+        $this->assertArrayHasKey('meta_description', $data);
+        $this->assertArrayHasKey('meta_keywords', $data);
+    }
+
+    public function test_product_resource_meta_fields_use_app_locale_by_default(): void
+    {
+        $product  = $this->makeProductWithMeta();
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray(Request::create('/'));
+
+        $this->assertSame('EN Title', $data['meta_title']);
+        $this->assertSame('EN Desc', $data['meta_description']);
+        $this->assertSame('en, keywords', $data['meta_keywords']);
+    }
+
+    public function test_product_resource_meta_fields_respect_request_locale(): void
+    {
+        $product = $this->makeProductWithMeta();
+
+        $request  = Request::create('/');
+        $langStub = new \stdClass();
+        $langStub->code = 'fr';
+        $request->attributes->set('lang', $langStub);
+
+        $resource = new ProductResource($product);
+        $data     = $resource->toArray($request);
+
+        $this->assertSame('FR Titre', $data['meta_title']);
+        $this->assertSame('FR Desc', $data['meta_description']);
+        $this->assertSame('fr, mots-clés', $data['meta_keywords']);
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -278,6 +319,23 @@ class ProductResourceTest extends TestCase
             'name'        => json_encode(['en' => 'Test Product', 'fr' => 'Produit Test']),
             'description' => json_encode(['en' => 'Test Description', 'fr' => 'Description Test']),
             'is_active'   => true,
+        ]);
+
+        return $product;
+    }
+
+    private function makeProductWithMeta(): Product
+    {
+        $product = new Product();
+        $product->setRawAttributes([
+            'id'               => 2,
+            'slug'             => 'meta-product',
+            'name'             => json_encode(['en' => 'Test Product', 'fr' => 'Produit Test']),
+            'description'      => json_encode(['en' => 'Test Description', 'fr' => 'Description Test']),
+            'is_active'        => true,
+            'meta_title'       => json_encode(['en' => 'EN Title', 'fr' => 'FR Titre']),
+            'meta_description' => json_encode(['en' => 'EN Desc', 'fr' => 'FR Desc']),
+            'meta_keywords'    => json_encode(['en' => 'en, keywords', 'fr' => 'fr, mots-clés']),
         ]);
 
         return $product;

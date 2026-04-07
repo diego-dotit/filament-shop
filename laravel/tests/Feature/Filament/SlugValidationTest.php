@@ -82,7 +82,12 @@ class SlugValidationTest extends TestCase
 
     public function test_create_manufacturer_rejects_slug_already_in_slugs_table(): void
     {
+        // Create product BEFORE language so HasSlugs doesn't auto-create a slug entry
         $product = Product::factory()->create(['slug' => 'global-slug']);
+
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        // Now manually insert the slug entry — no duplicate conflict
         Slug::create([
             'sluggable_type' => Product::class,
             'sluggable_id'   => $product->id,
@@ -92,11 +97,11 @@ class SlugValidationTest extends TestCase
 
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'Some Manufacturer',
-                'slug' => 'global-slug',
+                'name_en' => 'Some Manufacturer',
+                'slug_en' => 'global-slug',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     // ── alphaDash validation – Product ────────────────────────────────────
@@ -148,23 +153,29 @@ class SlugValidationTest extends TestCase
 
     public function test_create_manufacturer_slug_rejects_spaces_and_special_chars(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'Bad Manufacturer',
-                'slug' => 'bad slug!',
+                'name_en' => 'Bad Manufacturer',
+                'slug_en' => 'bad slug!',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     // ── Edit allows own slug from slugs table – Manufacturer ──────────────
 
     public function test_edit_manufacturer_allows_own_slug_from_slugs_table(): void
     {
+        // Create manufacturer BEFORE language so HasSlugs skips auto-slug creation
         $manufacturer = Manufacturer::factory()->create([
             'name' => 'Acme Corp',
             'slug' => 'acme-corp',
         ]);
+
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Slug::create([
             'sluggable_type' => Manufacturer::class,
             'sluggable_id'   => $manufacturer->id,
@@ -174,11 +185,11 @@ class SlugValidationTest extends TestCase
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
             ->fillForm([
-                'name' => 'Acme Corp Updated',
-                'slug' => 'acme-corp',
+                'name_en' => 'Acme Corp Updated',
+                'slug_en' => 'acme-corp',
             ])
             ->call('save')
-            ->assertHasNoFormErrors(['slug']);
+            ->assertHasNoFormErrors(['slug_en']);
     }
 
     // ── Edit allows own slug from slugs table – Category ──────────────────
@@ -226,7 +237,12 @@ class SlugValidationTest extends TestCase
 
     public function test_edit_manufacturer_rejects_slug_from_another_slugs_record(): void
     {
+        // Create manufacturers BEFORE language so HasSlugs skips auto-slug creation
         $manufacturer1 = Manufacturer::factory()->create(['slug' => 'brand-one']);
+        $manufacturer2 = Manufacturer::factory()->create(['slug' => 'brand-two']);
+
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Slug::create([
             'sluggable_type' => Manufacturer::class,
             'sluggable_id'   => $manufacturer1->id,
@@ -234,22 +250,24 @@ class SlugValidationTest extends TestCase
             'slug'           => 'brand-one',
         ]);
 
-        $manufacturer2 = Manufacturer::factory()->create(['slug' => 'brand-two']);
-
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer2->getRouteKey()])
             ->fillForm([
-                'name' => 'Brand Two',
-                'slug' => 'brand-one', // trying to steal brand-one's slug
+                'name_en' => 'Brand Two',
+                'slug_en' => 'brand-one', // trying to steal brand-one's slug
             ])
             ->call('save')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     // ── Cross-resource slug uniqueness ────────────────────────────────────
 
     public function test_manufacturer_rejects_slug_already_used_by_product(): void
     {
+        // Create product BEFORE language so HasSlugs skips auto-slug creation
         $product = Product::factory()->create(['slug' => 'universal-slug']);
+
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Slug::create([
             'sluggable_type' => Product::class,
             'sluggable_id'   => $product->id,
@@ -259,10 +277,10 @@ class SlugValidationTest extends TestCase
 
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'New Manufacturer',
-                'slug' => 'universal-slug',
+                'name_en' => 'New Manufacturer',
+                'slug_en' => 'universal-slug',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 }

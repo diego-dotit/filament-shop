@@ -107,40 +107,48 @@ class ManufacturerResourceTest extends TestCase
 
     public function test_can_create_manufacturer_with_name_and_slug(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'Test Manufacturer',
-                'slug' => 'test-manufacturer',
+                'name_en' => 'Test Manufacturer',
+                'slug_en' => 'test-manufacturer',
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $this->assertDatabaseHas('manufacturers', [
-            'name' => 'Test Manufacturer',
-            'slug' => 'test-manufacturer',
-        ]);
+        $this->assertDatabaseHas('manufacturers', ['slug' => 'test-manufacturer']);
+
+        $manufacturer = Manufacturer::where('slug', 'test-manufacturer')->firstOrFail();
+        $this->assertSame('Test Manufacturer', $manufacturer->getTranslation('name', 'en'));
     }
 
     public function test_slug_is_auto_generated_from_name(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
-            ->fillForm(['name' => 'Sony Electronics'])
-            ->assertFormSet(fn (array $data) => $this->assertSame('sony-electronics', $data['slug']));
+            ->fillForm(['name_en' => 'Sony Electronics'])
+            ->assertFormSet(fn (array $data) => $this->assertSame('sony-electronics', $data['slug_en']));
     }
 
     public function test_create_requires_name(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => '',
-                'slug' => 'some-slug',
+                'name_en' => '',
+                'slug_en' => 'some-slug',
             ])
             ->call('create')
-            ->assertHasFormErrors(['name' => 'required']);
+            ->assertHasFormErrors(['name_en' => 'required']);
     }
 
     public function test_create_requires_unique_slug(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         // Insert directly into the slugs table so the validation against
         // that table is exercised (no language needed).
         Slug::create([
@@ -152,15 +160,17 @@ class ManufacturerResourceTest extends TestCase
 
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'Another Manufacturer',
-                'slug' => 'existing-slug',
+                'name_en' => 'Another Manufacturer',
+                'slug_en' => 'existing-slug',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_slug_uniqueness_validates_against_slugs_table(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         // A slug belonging to a *different* manufacturer must block creation.
         Slug::create([
             'sluggable_type' => Manufacturer::class,
@@ -170,15 +180,17 @@ class ManufacturerResourceTest extends TestCase
         ]);
 
         Livewire::test(CreateManufacturer::class)
-            ->fillForm(['name' => 'New Brand', 'slug' => 'blocked-slug'])
+            ->fillForm(['name_en' => 'New Brand', 'slug_en' => 'blocked-slug'])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_creating_manufacturer_persists_slug_to_slugs_table(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
-            ->fillForm(['name' => 'Fresh Brand', 'slug' => 'fresh-brand'])
+            ->fillForm(['name_en' => 'Fresh Brand', 'slug_en' => 'fresh-brand'])
             ->call('create')
             ->assertHasNoFormErrors();
 
@@ -203,37 +215,39 @@ class ManufacturerResourceTest extends TestCase
 
     public function test_can_edit_manufacturer(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'Old Name',
+            'name' => ['en' => 'Old Name'],
             'slug' => 'old-name',
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
             ->fillForm([
-                'name' => 'New Name',
-                'slug' => 'new-name',
+                'name_en' => 'New Name',
+                'slug_en' => 'new-name',
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertDatabaseHas('manufacturers', [
-            'id'   => $manufacturer->id,
-            'name' => 'New Name',
-            'slug' => 'new-name',
-        ]);
+        $manufacturer->refresh();
+        $this->assertSame('New Name', $manufacturer->getTranslation('name', 'en'));
+        $this->assertSame('new-name', $manufacturer->slug);
     }
 
     public function test_edit_allows_same_slug_for_same_record(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'My Manufacturer',
+            'name' => ['en' => 'My Manufacturer'],
             'slug' => 'my-manufacturer',
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
             ->fillForm([
-                'name' => 'My Manufacturer Updated',
-                'slug' => 'my-manufacturer',
+                'name_en' => 'My Manufacturer Updated',
+                'slug_en' => 'my-manufacturer',
             ])
             ->call('save')
             ->assertHasNoFormErrors();
@@ -241,13 +255,15 @@ class ManufacturerResourceTest extends TestCase
 
     public function test_editing_manufacturer_persists_slug_to_slugs_table(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'Old Brand',
+            'name' => ['en' => 'Old Brand'],
             'slug' => 'old-brand',
         ]);
 
-        // Pre-seed the slug entry to simulate an already-persisted slug.
-        Slug::create([
+        // HasSlugs auto-creates 'old-brand' on save; verify it exists before editing
+        $this->assertDatabaseHas('slugs', [
             'sluggable_type' => Manufacturer::class,
             'sluggable_id'   => $manufacturer->id,
             'locale'         => 'en',
@@ -255,7 +271,7 @@ class ManufacturerResourceTest extends TestCase
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->fillForm(['name' => 'New Brand', 'slug' => 'new-brand'])
+            ->fillForm(['name_en' => 'New Brand', 'slug_en' => 'new-brand'])
             ->call('save')
             ->assertHasNoFormErrors();
 
@@ -274,10 +290,13 @@ class ManufacturerResourceTest extends TestCase
 
     public function test_edit_rejects_slug_already_used_by_another_manufacturer(): void
     {
-        $manufacturerA = Manufacturer::factory()->create(['name' => 'Brand A', 'slug' => 'brand-a']);
-        $manufacturerB = Manufacturer::factory()->create(['name' => 'Brand B', 'slug' => 'brand-b']);
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
-        Slug::create([
+        $manufacturerA = Manufacturer::factory()->create(['name' => ['en' => 'Brand A'], 'slug' => 'brand-a']);
+        $manufacturerB = Manufacturer::factory()->create(['name' => ['en' => 'Brand B'], 'slug' => 'brand-b']);
+
+        // HasSlugs auto-creates 'brand-a' for manufacturerA on save; it's already in the slugs table
+        $this->assertDatabaseHas('slugs', [
             'sluggable_type' => Manufacturer::class,
             'sluggable_id'   => $manufacturerA->id,
             'locale'         => 'en',
@@ -285,55 +304,63 @@ class ManufacturerResourceTest extends TestCase
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturerB->getRouteKey()])
-            ->fillForm(['name' => 'Brand B', 'slug' => 'brand-a'])
+            ->fillForm(['name_en' => 'Brand B', 'slug_en' => 'brand-a'])
             ->call('save')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     // ── Slug Field Structure ───────────────────────────────────────────────
 
     public function test_slug_field_rejects_value_with_spaces(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'My Manufacturer',
-                'slug' => 'my slug with spaces',
+                'name_en' => 'My Manufacturer',
+                'slug_en' => 'my slug with spaces',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_slug_field_rejects_value_with_special_characters(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name' => 'My Manufacturer',
-                'slug' => 'my-slug!@#',
+                'name_en' => 'My Manufacturer',
+                'slug_en' => 'my-slug!@#',
             ])
             ->call('create')
-            ->assertHasFormErrors(['slug']);
+            ->assertHasFormErrors(['slug_en']);
     }
 
     public function test_slug_field_accepts_valid_alphadash_value(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         Livewire::test(CreateManufacturer::class)
             ->fillForm([
-                'name'  => 'My Manufacturer',
-                'slug'  => 'my-slug-123',
+                'name_en' => 'My Manufacturer',
+                'slug_en' => 'my-slug-123',
             ])
             ->call('create')
             ->assertHasNoFormErrors();
     }
 
-    public function test_slug_field_is_keyed_as_slug_not_per_locale(): void
+    public function test_slug_field_is_keyed_per_locale(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'Test Brand',
+            'name' => ['en' => 'Test Brand'],
             'slug' => 'test-brand',
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertArrayHasKey('slug', $data));
+            ->assertFormSet(fn (array $data) => $this->assertArrayHasKey('slug_en', $data));
     }
 
     // ── Delete ─────────────────────────────────────────────────────────────
@@ -355,7 +382,7 @@ class ManufacturerResourceTest extends TestCase
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'Acme Corp',
+            'name' => ['en' => 'Acme Corp'],
             'slug' => 'acme-corp',
         ]);
 
@@ -363,13 +390,15 @@ class ManufacturerResourceTest extends TestCase
         $manufacturer->slugs()->where('locale', 'en')->update(['slug' => 'acme-corp-from-slugs']);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertSame('acme-corp-from-slugs', $data['slug']));
+            ->assertFormSet(fn (array $data) => $this->assertSame('acme-corp-from-slugs', $data['slug_en']));
     }
 
     public function test_edit_form_slug_is_empty_when_no_slug_table_entry_exists(): void
     {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'No Slug',
+            'name' => ['en' => 'No Slug'],
             'slug' => 'no-slug',
         ]);
 
@@ -377,16 +406,16 @@ class ManufacturerResourceTest extends TestCase
         $manufacturer->slugs()->delete();
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertSame('', $data['slug'] ?? ''));
+            ->assertFormSet(fn (array $data) => $this->assertSame('', $data['slug_en'] ?? ''));
     }
 
-    public function test_edit_form_slug_falls_back_to_first_available_locale_when_default_locale_absent(): void
+    public function test_edit_form_slug_falls_back_to_per_locale_value(): void
     {
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
         Language::factory()->create(['code' => 'fr', 'name' => 'French', 'is_default' => false]);
 
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'French Maker',
+            'name' => ['fr' => 'French Maker'],
             'slug' => 'french-maker',
         ]);
 
@@ -400,7 +429,7 @@ class ManufacturerResourceTest extends TestCase
         ]);
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertSame('french-maker-fr', $data['slug']));
+            ->assertFormSet(fn (array $data) => $this->assertSame('french-maker-fr', $data['slug_fr']));
     }
 
     public function test_slug_value_is_preserved_when_form_is_reopened(): void
@@ -408,7 +437,7 @@ class ManufacturerResourceTest extends TestCase
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
         $manufacturer = Manufacturer::factory()->create([
-            'name' => 'Stable Corp',
+            'name' => ['en' => 'Stable Corp'],
             'slug' => 'stable-corp',
         ]);
 
@@ -422,9 +451,9 @@ class ManufacturerResourceTest extends TestCase
 
         // Open form twice, assert slug is consistent
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertSame('stable-corp', $data['slug']));
+            ->assertFormSet(fn (array $data) => $this->assertSame('stable-corp', $data['slug_en']));
 
         Livewire::test(EditManufacturer::class, ['record' => $manufacturer->getRouteKey()])
-            ->assertFormSet(fn (array $data) => $this->assertSame('stable-corp', $data['slug']));
+            ->assertFormSet(fn (array $data) => $this->assertSame('stable-corp', $data['slug_en']));
     }
 }

@@ -2,13 +2,22 @@
 
 namespace App\Filament\Resources\ManufacturerResource\Pages;
 
+use App\Domains\Language\Models\Language;
+use App\Filament\Resources\Concerns\MutatesTranslatableFields;
 use App\Filament\Resources\ManufacturerResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditManufacturer extends EditRecord
 {
+    use MutatesTranslatableFields;
+
     protected static string $resource = ManufacturerResource::class;
+
+    protected function getTranslatableFields(): array
+    {
+        return ['name', 'description', 'meta_title', 'meta_description', 'meta_keywords'];
+    }
 
     protected function getHeaderActions(): array
     {
@@ -23,37 +32,28 @@ class EditManufacturer extends EditRecord
     }
 
     /**
-     * Pre-populate the slug field from the polymorphic slugs table.
+     * Expand stored JSON translations into flat per-locale fields so Filament
+     * can populate each translation tab input individually.
+     * Also pre-populates per-locale slug fields from the polymorphic slugs table.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $locale = config('app.locale', 'en');
+        $languages = Language::all();
 
-        $slug = $this->record->getSlugForLocale($locale)
-            ?? $this->record->slugs()->first();
+        foreach ($languages as $language) {
+            $code = $language->code;
 
-        $data['slug'] = $slug?->slug ?? '';
+            $data["name_{$code}"]             = $this->record->getTranslation('name', $code, false);
+            $data["description_{$code}"]      = $this->record->getTranslation('description', $code, false);
+            $data["meta_title_{$code}"]       = $this->record->getTranslation('meta_title', $code, false);
+            $data["meta_description_{$code}"] = $this->record->getTranslation('meta_description', $code, false);
+            $data["meta_keywords_{$code}"]    = $this->record->getTranslation('meta_keywords', $code, false);
+            $data["slug_{$code}"]             = $this->record->getSlugForLocale($code)?->slug;
+        }
 
         return $data;
-    }
-
-    /**
-     * Persist the manually-entered slug value to the polymorphic slugs table.
-     */
-    protected function afterSave(): void
-    {
-        $slug = $this->data['slug'] ?? null;
-
-        if ($slug !== null && $slug !== '') {
-            $locale = config('app.locale', 'en');
-
-            $this->record->slugs()->updateOrCreate(
-                ['locale' => $locale],
-                ['slug'   => $slug],
-            );
-        }
     }
 }

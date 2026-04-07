@@ -25,6 +25,9 @@ class ProductResource extends JsonResource
             'slug'               => $this->slug,
             'name'               => $this->getTranslation('name', $lang),
             'description'        => $this->getTranslation('description', $lang),
+            'meta_title'         => $this->getTranslation('meta_title', $lang),
+            'meta_description'   => $this->getTranslation('meta_description', $lang),
+            'meta_keywords'      => $this->getTranslation('meta_keywords', $lang),
             'is_active'          => $this->is_active,
             'price'              => $this->resolveLowestPrice(),
             'variants'           => ProductVariantResource::collection(

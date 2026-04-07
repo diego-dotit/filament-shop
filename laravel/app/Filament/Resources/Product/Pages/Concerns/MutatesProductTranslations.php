@@ -55,8 +55,22 @@ trait MutatesProductTranslations
     }
 
     /**
-     * Collect per-locale flat fields (name_en, description_de, …) into the
-     * JSON translation arrays that Spatie HasTranslations expects.
+     * Translatable fields that use per-locale flat keys (field_en, field_de, …)
+     * and are collapsed into JSON translation arrays before persistence.
+     *
+     * @var list<string>
+     */
+    private const TRANSLATABLE_FIELDS = [
+        'name',
+        'description',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+    ];
+
+    /**
+     * Collect per-locale flat fields (name_en, description_de, meta_title_fr, …)
+     * into the JSON translation arrays that Spatie HasTranslations expects.
      * Also captures slug_{code} fields for later persistence.
      *
      * @param  array<string, mixed>  $data
@@ -67,29 +81,26 @@ trait MutatesProductTranslations
         $languages       = Language::orderByDesc('is_default')->orderBy('name')->get();
         $defaultLanguage = $languages->firstWhere('is_default', true);
 
-        $nameTranslations        = [];
-        $descriptionTranslations = [];
-        $slugData                = [];
+        /** @var array<string, array<string, string>> $translations */
+        $translations = array_fill_keys(self::TRANSLATABLE_FIELDS, []);
+        $slugData     = [];
 
         foreach ($languages as $language) {
             $code = $language->code;
 
-            $nameValue = $data["name_{$code}"] ?? null;
-            if ($nameValue !== null && $nameValue !== '') {
-                $nameTranslations[$code] = $nameValue;
-            }
-
-            $descValue = $data["description_{$code}"] ?? null;
-            if ($descValue !== null && $descValue !== '') {
-                $descriptionTranslations[$code] = $descValue;
+            foreach (self::TRANSLATABLE_FIELDS as $field) {
+                $value = $data["{$field}_{$code}"] ?? null;
+                if ($value !== null && $value !== '') {
+                    $translations[$field][$code] = $value;
+                }
+                unset($data["{$field}_{$code}"]);
             }
 
             $slugValue = $data["slug_{$code}"] ?? null;
             if ($slugValue !== null && $slugValue !== '') {
                 $slugData[$code] = $slugValue;
             }
-
-            unset($data["name_{$code}"], $data["description_{$code}"], $data["slug_{$code}"]);
+            unset($data["slug_{$code}"]);
         }
 
         // Derive the canonical products.slug from the default locale slug,
@@ -98,15 +109,18 @@ trait MutatesProductTranslations
             $defaultCode = $defaultLanguage?->code;
             if ($defaultCode && isset($slugData[$defaultCode])) {
                 $data['slug'] = $slugData[$defaultCode];
-            } elseif ($defaultCode && isset($nameTranslations[$defaultCode])) {
-                $data['slug'] = Str::slug($nameTranslations[$defaultCode]);
+            } elseif ($defaultCode && isset($translations['name'][$defaultCode])) {
+                $data['slug'] = Str::slug($translations['name'][$defaultCode]);
             }
         }
 
         $this->pendingSlugs = $slugData;
 
-        $data['name']        = $nameTranslations;
-        $data['description'] = $descriptionTranslations ?: null;
+        $data['name']             = $translations['name'];
+        $data['description']      = $translations['description'] ?: null;
+        $data['meta_title']       = $translations['meta_title'] ?: null;
+        $data['meta_description'] = $translations['meta_description'] ?: null;
+        $data['meta_keywords']    = $translations['meta_keywords'] ?: null;
 
         return $data;
     }

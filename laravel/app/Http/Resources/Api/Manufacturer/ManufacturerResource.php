@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Api\Category;
+namespace App\Http\Resources\Api\Manufacturer;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CategoryResource extends JsonResource
+class ManufacturerResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,28 +17,14 @@ class CategoryResource extends JsonResource
         $lang = $this->resolveLang($request);
 
         return [
-            'id'       => $this->id,
-            'slug'     => ($this->exists ? $this->getSlugForLocale($lang)?->slug : null) ?? $this->slug,
-            'name'     => $this->getTranslation('name', $lang),
+            'id'               => $this->id,
+            'slug'             => ($this->exists ? $this->getSlugForLocale($lang)?->slug : null) ?? $this->slug,
+            'name'             => $this->getTranslation('name', $lang),
             'description'      => $this->getTranslation('description', $lang),
             'meta_title'       => $this->getTranslation('meta_title', $lang),
             'meta_description' => $this->getTranslation('meta_description', $lang),
             'meta_keywords'    => $this->getTranslation('meta_keywords', $lang),
-            'is_active' => $this->is_active,
-            'children' => static::collection(
-                $this->resource->relationLoaded('children')
-                    ? $this->children
-                    : collect()
-            ),
-            'image'    => $this->resolveImage(),
-            'parent'   => $this->when(
-                $this->resource->relationLoaded('parent') && $this->parent !== null,
-                fn () => [
-                    'id'   => $this->parent->id,
-                    'slug' => $this->parent->getSlugForLocale($lang)?->slug ?? $this->parent->slug,
-                    'name' => $this->parent->getTranslation('name', $lang),
-                ]
-            ),
+            'image'            => $this->resolveImage(),
         ];
     }
 
@@ -61,7 +47,8 @@ class CategoryResource extends JsonResource
     {
         if (method_exists($this->resource, 'getFirstMediaUrl')) {
             try {
-                $url = $this->resource->getFirstMediaUrl();
+                $url = $this->resource->getFirstMediaUrl('thumbnail');
+
                 return $url ?: null;
             } catch (\Throwable) {
                 return null;
