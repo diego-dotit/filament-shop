@@ -1,12 +1,17 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Blog\BlogArticleController;
+use App\Http\Controllers\Api\Blog\BlogCategoryController;
+use App\Http\Controllers\Api\Blog\SettingsController as BlogSettingsController;
 use App\Http\Controllers\Api\Cart\CartController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Customer\AddressController;
 use App\Http\Controllers\Api\Customer\CustomerAuthController;
 use App\Http\Controllers\Api\Customer\CustomerController;
+use App\Http\Controllers\Api\General\SettingsController as GeneralSettingsController;
 use App\Http\Controllers\Api\Order\OrderController;
+use App\Http\Controllers\Api\Page\PageController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Review\ReviewController;
 use Illuminate\Http\Request;
@@ -72,3 +77,16 @@ Route::get('/products/{productId}/reviews', [ReviewController::class, 'index']);
 Route::middleware('auth:customers')->group(function () {
     Route::post('/products/{productId}/reviews', [ReviewController::class, 'store']);
 });
+
+// ── Blog endpoints ────────────────────────────────────────────────────────────
+Route::get('/blog/categories', [BlogCategoryController::class, 'index']);
+Route::get('/blog/articles', [BlogArticleController::class, 'index']);
+Route::get('/blog/articles/{slug}', [BlogArticleController::class, 'show']);
+Route::get('/blog/settings', [BlogSettingsController::class, 'show']);
+
+// ── Page endpoints ────────────────────────────────────────────────────────────
+Route::get('/pages', [PageController::class, 'index']);
+Route::get('/pages/{slug}', [PageController::class, 'show']);
+
+// ── General settings endpoints ────────────────────────────────────────────────
+Route::get('/settings', [GeneralSettingsController::class, 'show']);

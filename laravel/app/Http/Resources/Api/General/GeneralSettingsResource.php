@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Storage;
 class GeneralSettingsResource extends JsonResource
 {
     /**
+     * Disable the default "data" wrapper so the response is a flat object.
+     */
+    public static $wrap = null;
+
+    /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>

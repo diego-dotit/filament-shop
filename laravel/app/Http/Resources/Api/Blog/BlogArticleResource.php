@@ -28,10 +28,9 @@ class BlogArticleResource extends JsonResource
             'status'           => $this->status,
             'post_date'        => $this->post_date?->toDateString(),
             'thumbnail_url'    => $this->resolveThumbnail(),
-            'categories'       => BlogCategoryResource::collection(
-                $this->resource->relationLoaded('blogCategories')
-                    ? $this->blogCategories
-                    : collect()
+            'categories'       => $this->when(
+                $this->relationLoaded('blogCategories'),
+                fn () => BlogCategoryResource::collection($this->blogCategories)
             ),
             'created_at'       => $this->created_at?->toISOString(),
             'updated_at'       => $this->updated_at?->toISOString(),
