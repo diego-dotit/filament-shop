@@ -19,9 +19,9 @@ return new class extends Migration
             $table->text('meta_description')->nullable();
             $table->text('meta_keywords')->nullable();
             $table->text('slug')->nullable();
-            $table->string('author');
+            $table->string('author')->nullable();
             $table->string('status')->default('active');
-            $table->date('post_date');
+            $table->date('post_date')->nullable();
             $table->timestamps();
         });
     }
