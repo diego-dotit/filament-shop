@@ -33,7 +33,16 @@ class CategoryTest extends TestCase
         $category = new Category();
 
         $this->assertSame(
-            ['parent_id', 'name', 'slug', 'is_active'],
+            [
+                'parent_id',
+                'name',
+                'slug',
+                'is_active',
+                'description',
+                'meta_title',
+                'meta_description',
+                'meta_keywords',
+            ],
             $category->getFillable()
         );
     }
@@ -104,11 +113,14 @@ class CategoryTest extends TestCase
         $this->assertContains(\Spatie\Translatable\HasTranslations::class, $traits);
     }
 
-    public function test_category_translatable_field_is_name(): void
+    public function test_category_translatable_includes_all_fields(): void
     {
         $category = new Category();
 
-        $this->assertSame(['name'], $category->getTranslatableAttributes());
+        $this->assertSame(
+            ['name', 'description', 'meta_title', 'meta_description', 'meta_keywords'],
+            $category->getTranslatableAttributes()
+        );
     }
 
     // ── Media Library ────────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ class ProductTest extends TestCase
         $product = new Product();
 
         $this->assertSame(
-            ['name', 'slug', 'description', 'is_active'],
+            ['name', 'slug', 'description', 'is_active', 'meta_title', 'meta_description', 'meta_keywords'],
             $product->getFillable()
         );
     }
@@ -110,11 +110,11 @@ class ProductTest extends TestCase
         $this->assertContains(\Spatie\Translatable\HasTranslations::class, $traits);
     }
 
-    public function test_product_translatable_fields_are_name_and_description(): void
+    public function test_product_translatable_fields_include_meta_fields(): void
     {
         $product = new Product();
 
-        $this->assertSame(['name', 'description'], $product->getTranslatableAttributes());
+        $this->assertSame(['name', 'description', 'meta_title', 'meta_description', 'meta_keywords'], $product->getTranslatableAttributes());
     }
 
     // ── Media Library ────────────────────────────────────────────────────────

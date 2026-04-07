@@ -25,12 +25,14 @@ trait HasSlugs
         static::saved(function (self $model) {
             $locales = Language::all()->pluck('code');
 
+            $sourceField = $model->slugSourceField ?? 'name';
+
             foreach ($locales as $locale) {
-                // Determine the name for this locale
-                if (isset($model->translatable) && in_array('name', $model->translatable, true)) {
-                    $name = $model->getTranslation('name', $locale, false);
+                // Determine the value for this locale
+                if (isset($model->translatable) && in_array($sourceField, $model->translatable, true)) {
+                    $name = $model->getTranslation($sourceField, $locale, false);
                 } else {
-                    $name = $model->name ?? null;
+                    $name = $model->{$sourceField} ?? null;
                 }
 
                 if (empty($name)) {
@@ -42,9 +44,9 @@ trait HasSlugs
                 $existing = $model->slugs()->where('locale', $locale)->first();
 
                 if ($existing !== null) {
-                    // Only update the stored slug when the name field was changed in
+                    // Only update the stored slug when the source field was changed in
                     // this save operation; leave manually-customised slugs intact.
-                    if ($model->wasChanged('name')) {
+                    if ($model->wasChanged($sourceField)) {
                         try {
                             $existing->update(['slug' => $generatedSlug]);
                         } catch (UniqueConstraintViolationException) {

@@ -22,10 +22,10 @@ class Product extends Model implements HasMedia
     use HasTranslations;
     use InteractsWithMedia;
 
-    protected $fillable = ['name', 'slug', 'description', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'is_active', 'meta_title', 'meta_description', 'meta_keywords'];
 
     /** @var list<string> */
-    public $translatable = ['name', 'description'];
+    public $translatable = ['name', 'description', 'meta_title', 'meta_description', 'meta_keywords'];
 
     protected $casts = [
         'is_active' => 'boolean',

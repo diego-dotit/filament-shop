@@ -33,7 +33,7 @@ class ManufacturerTest extends TestCase
         $manufacturer = new Manufacturer();
 
         $this->assertSame(
-            ['name', 'slug'],
+            ['name', 'slug', 'description', 'meta_title', 'meta_description', 'meta_keywords'],
             $manufacturer->getFillable()
         );
     }

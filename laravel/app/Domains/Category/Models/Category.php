@@ -25,10 +25,14 @@ class Category extends Model implements HasMedia
         'name',
         'slug',
         'is_active',
+        'description',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
     ];
 
     /** @var list<string> */
-    public $translatable = ['name'];
+    public $translatable = ['name', 'description', 'meta_title', 'meta_description', 'meta_keywords'];
 
     protected $casts = [
         'is_active' => 'boolean',
