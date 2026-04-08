@@ -38,6 +38,7 @@ class EditOrder extends EditRecord
                 'postcode',
                 'type',
             ]))
+            ->values()
             ->toArray();
 
         $data['shipping_addresses'] = $this->record->addresses
@@ -50,6 +51,7 @@ class EditOrder extends EditRecord
                 'postcode',
                 'type',
             ]))
+            ->values()
             ->toArray();
 
         return $data;
