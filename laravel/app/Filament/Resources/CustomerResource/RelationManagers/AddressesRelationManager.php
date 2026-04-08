@@ -23,6 +23,21 @@ class AddressesRelationManager extends RelationManager
                 Forms\Components\TextInput::make('city')
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\TextInput::make('address_line_1')
+                    ->required()
+                    ->maxLength(255)
+                    ->label('Address Line 1'),
+
+                Forms\Components\TextInput::make('address_line_2')
+                    ->nullable()
+                    ->maxLength(255)
+                    ->label('Address Line 2'),
+
+                Forms\Components\TextInput::make('postcode')
+                    ->required()
+                    ->maxLength(255)
+                    ->label('Postcode'),
             ]);
     }
 

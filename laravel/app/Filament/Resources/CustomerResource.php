@@ -73,6 +73,42 @@ class CustomerResource extends Resource
                             ->maxLength(255),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Addresses')
+                    ->visibleOn('create')
+                    ->schema([
+                        Forms\Components\Repeater::make('addresses')
+                            ->schema([
+                                Forms\Components\TextInput::make('country')
+                                    ->label('Country')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('city')
+                                    ->label('City')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('address_line_1')
+                                    ->label('Address Line 1')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('address_line_2')
+                                    ->label('Address Line 2')
+                                    ->nullable()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('postcode')
+                                    ->label('Postcode')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->columns(2)
+                            ->addActionLabel('Add Address')
+                            ->collapsible()
+                            ->defaultItems(0),
+                    ]),
             ]);
     }
 
