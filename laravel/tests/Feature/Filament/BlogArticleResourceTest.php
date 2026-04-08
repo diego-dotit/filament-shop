@@ -131,6 +131,21 @@ class BlogArticleResourceTest extends TestCase
             ->assertFormFieldExists('meta_keywords_en');
     }
 
+    public function test_create_form_has_slug_field_for_default_language(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->assertFormFieldExists('slug_en');
+    }
+
+    public function test_create_form_has_slug_field_for_each_language(): void
+    {
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        Livewire::test(CreateBlogArticle::class)
+            ->assertFormFieldExists('slug_en')
+            ->assertFormFieldExists('slug_de');
+    }
+
     public function test_create_article_saves_translatable_fields_as_json(): void
     {
         Livewire::test(CreateBlogArticle::class)
@@ -247,8 +262,127 @@ class BlogArticleResourceTest extends TestCase
             ->assertHasFormErrors(['title_en']);
     }
 
+    public function test_create_article_with_null_author_succeeds(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en' => 'Article Without Author',
+                'author'   => null,
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('title->en', 'Article Without Author')->first();
+        $this->assertNotNull($article);
+        $this->assertNull($article->author);
+    }
+
+    public function test_author_column_is_nullable_in_database(): void
+    {
+        $article = BlogArticle::create([
+            'title'  => ['en' => 'No Author Article'],
+            'status' => 'active',
+            'author' => null,
+        ]);
+
+        $this->assertNotNull($article->id);
+        $this->assertNull($article->author);
+        $this->assertDatabaseHas('blog_articles', [
+            'id'     => $article->id,
+            'author' => null,
+        ]);
+    }
+
+    public function test_create_form_author_field_accepts_string_value(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'String Author Article',
+                'author'    => 'Alice Smith',
+                'post_date' => '2024-05-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('author', 'Alice Smith')->first();
+        $this->assertNotNull($article);
+        $this->assertSame('Alice Smith', $article->author);
+        $this->assertDatabaseHas('blog_articles', [
+            'id'     => $article->id,
+            'author' => 'Alice Smith',
+        ]);
+    }
+
+    public function test_author_field_is_optional_in_form(): void
+    {
+        // Author field must not have a required() modifier — submitting without
+        // an author should produce no form errors.
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en' => 'Optional Author Article',
+                'author'   => null,
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors(['author']);
+    }
+
+    public function test_edit_article_can_clear_author_to_null(): void
+    {
+        $article = $this->makeArticle(['author' => 'Existing Author']);
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->fillForm([
+                'title_en' => $article->getTranslation('title', 'en'),
+                'author'   => null,
+                'status'   => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $article->refresh();
+        $this->assertNull($article->author);
+        $this->assertDatabaseHas('blog_articles', [
+            'id'     => $article->id,
+            'author' => null,
+        ]);
+    }
+
+    public function test_round_trip_null_author_shows_empty_in_edit_form(): void
+    {
+        // Create article without author, reload edit form, verify author is null.
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en' => 'Round Trip No Author',
+                'author'   => null,
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('title->en', 'Round Trip No Author')->first();
+        $this->assertNotNull($article);
+        $this->assertNull($article->author);
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->assertFormSet([
+                'author' => null,
+            ]);
+    }
+
     // ── Slug auto-generation ───────────────────────────────────────────────
 
+    /**
+     * Verifies model-level slug persistence via the HasSlugs model event (fired on `saved`).
+     * When no explicit slug is provided, the slug is automatically generated from the title
+     * by the HasSlugs trait, independently of the Filament form.
+     *
+     * NOTE: This does NOT test the form's `->live(onBlur: true)->afterStateUpdated()` reactive
+     * slug pre-population (the UX preview that fills the slug field while the user types).
+     * That client-side reactive behavior requires a browser/Dusk test to verify.
+     */
     public function test_create_article_auto_generates_slug_from_title(): void
     {
         Livewire::test(CreateBlogArticle::class)
@@ -291,6 +425,136 @@ class BlogArticleResourceTest extends TestCase
         ]);
     }
 
+    public function test_create_article_persists_explicit_slug_field_to_database(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'Explicit Slug Field Article',
+                'slug_en'   => 'my-custom-slug',
+                'author'    => 'Explicit Slug Author',
+                'post_date' => '2024-01-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('author', 'Explicit Slug Author')->first();
+        $this->assertNotNull($article);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogArticle::class,
+            'sluggable_id'   => $article->id,
+            'locale'         => 'en',
+            'slug'           => 'my-custom-slug',
+        ]);
+    }
+
+    /**
+     * Verifies that model-level slug auto-generation (via HasSlugs) works independently per
+     * locale — each locale's title produces its own slug record in the `slugs` table.
+     *
+     * NOTE: This does NOT test the form's `->live(onBlur: true)->afterStateUpdated()` reactive
+     * slug pre-population (the UX preview that fills the slug field while the user types).
+     * That client-side reactive behavior requires a browser/Dusk test to verify.
+     */
+    public function test_slug_auto_generation_is_independent_per_locale(): void
+    {
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'English Article Title',
+                'title_de'  => 'Deutscher Artikel Titel',
+                'author'    => 'Multilang Slug Author',
+                'post_date' => '2024-01-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('author', 'Multilang Slug Author')->first();
+        $this->assertNotNull($article);
+
+        $slugEn = $article->getSlugForLocale('en');
+        $slugDe = $article->getSlugForLocale('de');
+
+        $this->assertNotNull($slugEn);
+        $this->assertNotNull($slugDe);
+        $this->assertSame('english-article-title', $slugEn->slug);
+        $this->assertSame('deutscher-artikel-titel', $slugDe->slug);
+    }
+
+    public function test_manual_slug_override_is_not_overwritten_by_title(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'Auto Generated Title Here',
+                'slug_en'   => 'my-handcrafted-slug',
+                'author'    => 'Manual Override Author',
+                'post_date' => '2024-01-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('author', 'Manual Override Author')->first();
+        $this->assertNotNull($article);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogArticle::class,
+            'sluggable_id'   => $article->id,
+            'locale'         => 'en',
+            'slug'           => 'my-handcrafted-slug',
+        ]);
+    }
+
+    public function test_duplicate_slug_in_same_locale_shows_validation_error(): void
+    {
+        // Create a first article — HasSlugs auto-generates 'first-article' for 'en'
+        $existing = $this->makeArticle(['title' => ['en' => 'First Article']]);
+
+        // Overwrite the auto-generated slug with 'duplicate-slug' for locale 'en'
+        $existing->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            ['slug'   => 'duplicate-slug'],
+        );
+
+        // Attempt to create a second article with the same slug value
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'Second Article',
+                'slug_en'   => 'duplicate-slug',
+                'author'    => 'Duplicate Slug Author',
+                'post_date' => '2024-01-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['slug_en']);
+    }
+
+    public function test_slug_round_trip_create_then_reload_edit_form(): void
+    {
+        Livewire::test(CreateBlogArticle::class)
+            ->fillForm([
+                'title_en'  => 'Round Trip Article',
+                'slug_en'   => 'round-trip-slug',
+                'author'    => 'Round Trip Author',
+                'post_date' => '2024-01-01',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $article = BlogArticle::where('author', 'Round Trip Author')->first();
+        $this->assertNotNull($article);
+
+        // Reload via edit form and verify slug is pre-populated from DB
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->assertFormSet([
+                'slug_en' => 'round-trip-slug',
+            ]);
+    }
+
     // ── Edit page ──────────────────────────────────────────────────────────
 
     public function test_edit_blog_article_page_renders_successfully(): void
@@ -299,6 +563,25 @@ class BlogArticleResourceTest extends TestCase
 
         Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
             ->assertSuccessful();
+    }
+
+    public function test_edit_form_has_slug_field_for_default_language(): void
+    {
+        $article = $this->makeArticle();
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->assertFormFieldExists('slug_en');
+    }
+
+    public function test_edit_form_has_slug_field_for_each_language(): void
+    {
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        $article = $this->makeArticle();
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->assertFormFieldExists('slug_en')
+            ->assertFormFieldExists('slug_de');
     }
 
     public function test_edit_form_pre_populates_translatable_fields(): void
@@ -444,6 +727,52 @@ class BlogArticleResourceTest extends TestCase
 
         $this->assertDatabaseMissing('blog_article_blog_category', [
             'blog_article_id' => $articleId,
+        ]);
+    }
+
+    // ── Edit page: slug persistence ───────────────────────────────────────
+
+    public function test_edit_form_pre_populates_slug_fields_from_database(): void
+    {
+        $article = $this->makeArticle(['title' => ['en' => 'Slug Pre-population Article']]);
+
+        // Manually insert a slug record so we can assert pre-population
+        $article->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            ['slug'   => 'slug-pre-population-article'],
+        );
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->assertFormSet([
+                'slug_en' => 'slug-pre-population-article',
+            ]);
+    }
+
+    public function test_edit_article_persists_slug_to_database_on_save(): void
+    {
+        $article = $this->makeArticle(['title' => ['en' => 'Original Slug Article']]);
+
+        // Seed an existing slug
+        $article->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            ['slug'   => 'original-slug-article'],
+        );
+
+        Livewire::test(EditBlogArticle::class, ['record' => $article->getRouteKey()])
+            ->fillForm([
+                'title_en' => 'Original Slug Article',
+                'slug_en'  => 'custom-edited-slug',
+                'author'   => 'Slug Persist Author',
+                'status'   => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogArticle::class,
+            'sluggable_id'   => $article->id,
+            'locale'         => 'en',
+            'slug'           => 'custom-edited-slug',
         ]);
     }
 

@@ -45,11 +45,12 @@ class EditBlogCategory extends EditRecord
         foreach ($languages as $language) {
             $code = $language->code;
 
-            $data["title_{$code}"]            = $this->record->getTranslation('title', $code, false);
-            $data["description_{$code}"]      = $this->record->getTranslation('description', $code, false);
-            $data["meta_title_{$code}"]       = $this->record->getTranslation('meta_title', $code, false);
+            $data["title_{$code}"] = $this->record->getTranslation('title', $code, false);
+            $data["description_{$code}"] = $this->record->getTranslation('description', $code, false);
+            $data["meta_title_{$code}"] = $this->record->getTranslation('meta_title', $code, false);
             $data["meta_description_{$code}"] = $this->record->getTranslation('meta_description', $code, false);
-            $data["meta_keywords_{$code}"]    = $this->record->getTranslation('meta_keywords', $code, false);
+            $data["meta_keywords_{$code}"] = $this->record->getTranslation('meta_keywords', $code, false);
+            $data["slug_{$code}"] = $this->record->getSlugForLocale($code)?->slug ?? '';
         }
 
         return $data;

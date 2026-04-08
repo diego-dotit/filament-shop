@@ -12,11 +12,15 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Unique;
 
 class BlogCategoryResource extends Resource
 {
@@ -40,7 +44,29 @@ class BlogCategoryResource extends Resource
                     Forms\Components\TextInput::make("title_{$language->code}")
                         ->label('Title')
                         ->required($language->is_default)
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($language): void {
+                            $oldStr = is_string($old) ? $old : '';
+                            $stateStr = is_string($state) ? $state : '';
+                            $currentSlug = $get("slug_{$language->code}") ?? '';
+                            if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
+                                $set("slug_{$language->code}", Str::slug($stateStr));
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make("slug_{$language->code}")
+                        ->label('Slug')
+                        ->maxLength(255)
+                        ->alphaDash()
+                        ->unique(
+                            table: 'slugs',
+                            column: 'slug',
+                            modifyRuleUsing: fn (Unique $rule, ?Model $record): Unique => $rule->ignore(
+                                $record?->getSlugForLocale($language->code)?->id
+                            ),
+                        )
+                        ->helperText('Auto-generated from title. You may override manually.'),
 
                     RichEditor::make("description_{$language->code}")
                         ->label('Description')
@@ -113,9 +139,9 @@ class BlogCategoryResource extends Resource
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'active'   => 'success',
+                        'active' => 'success',
                         'inactive' => 'danger',
-                        default    => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('created_at')
@@ -146,9 +172,9 @@ class BlogCategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListBlogCategories::route('/'),
+            'index' => ListBlogCategories::route('/'),
             'create' => CreateBlogCategory::route('/create'),
-            'edit'   => EditBlogCategory::route('/{record}/edit'),
+            'edit' => EditBlogCategory::route('/{record}/edit'),
         ];
     }
 }

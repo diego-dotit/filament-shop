@@ -216,6 +216,73 @@ class BlogCategoryResourceTest extends TestCase
         $this->assertCount(1, $category->getMedia('thumbnail'));
     }
 
+    // ── Slug Form Fields ───────────────────────────────────────────────────
+
+    public function test_create_form_has_slug_field_per_language(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        Livewire::test(CreateBlogCategory::class)
+            ->assertFormFieldExists('slug_en')
+            ->assertFormFieldExists('slug_de');
+    }
+
+    public function test_edit_form_has_slug_field_per_language(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        $category = BlogCategory::factory()->create([
+            'title'  => ['en' => 'Test Category EN', 'de' => 'Test Kategorie DE'],
+            'status' => 'active',
+        ]);
+
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->assertFormFieldExists('slug_en')
+            ->assertFormFieldExists('slug_de');
+    }
+
+    public function test_edit_form_prepopulates_slug_per_locale(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        $category = BlogCategory::factory()->create([
+            'title'  => ['en' => 'Slug Test Category'],
+            'status' => 'active',
+        ]);
+
+        // Ensure slug exists in DB
+        $category->slugs()->updateOrCreate(['locale' => 'en'], ['slug' => 'slug-test-category']);
+
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->assertFormSet(fn (array $data) => $this->assertSame('slug-test-category', $data['slug_en'] ?? null));
+    }
+
+    public function test_manual_slug_override_is_persisted_on_create(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        Livewire::test(CreateBlogCategory::class)
+            ->fillForm([
+                'title_en'  => 'Some Title',
+                'slug_en'   => 'my-custom-slug',
+                'status'    => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $category = BlogCategory::whereJsonContains('title->en', 'Some Title')->first();
+        $this->assertNotNull($category);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'en',
+            'slug'           => 'my-custom-slug',
+        ]);
+    }
+
     // ── Slug Auto-Generation ───────────────────────────────────────────────
 
     public function test_slug_is_auto_generated_from_title_on_create(): void
@@ -395,6 +462,213 @@ class BlogCategoryResourceTest extends TestCase
             ->callAction('delete');
 
         $this->assertDatabaseMissing('blog_categories', ['id' => $category->id]);
+    }
+
+    // ── Slug Uniqueness Validation ─────────────────────────────────────────
+
+    public function test_slug_uniqueness_validation_rejects_duplicate_slug_for_same_locale(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        // Create first category with a known slug
+        $existing = BlogCategory::factory()->create([
+            'title'  => ['en' => 'First Category'],
+            'status' => 'active',
+        ]);
+        $existing->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            [
+                'sluggable_type' => BlogCategory::class,
+                'sluggable_id'   => $existing->id,
+                'slug'           => 'duplicate-slug',
+            ]
+        );
+
+        // Attempt to create a second category with the same slug
+        Livewire::test(CreateBlogCategory::class)
+            ->fillForm([
+                'title_en' => 'Second Category',
+                'slug_en'  => 'duplicate-slug',
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['slug_en']);
+    }
+
+    // ── Slug Persistence on Edit ───────────────────────────────────────────
+
+    public function test_edit_form_persists_updated_slug_to_database(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        $category = BlogCategory::factory()->create([
+            'title'  => ['en' => 'Original Category'],
+            'status' => 'active',
+        ]);
+
+        // Seed an existing slug
+        $category->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            [
+                'sluggable_type' => BlogCategory::class,
+                'sluggable_id'   => $category->id,
+                'slug'           => 'original-category',
+            ]
+        );
+
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->fillForm([
+                'title_en' => 'Original Category',
+                'slug_en'  => 'updated-category-slug',
+                'status'   => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'en',
+            'slug'           => 'updated-category-slug',
+        ]);
+
+        $this->assertDatabaseMissing('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'en',
+            'slug'           => 'original-category',
+        ]);
+    }
+
+    // ── Slug Round-Trip ────────────────────────────────────────────────────
+
+    public function test_slug_round_trip_create_then_reload_edit_form(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        // Create category with custom slug
+        Livewire::test(CreateBlogCategory::class)
+            ->fillForm([
+                'title_en' => 'Round Trip Category',
+                'slug_en'  => 'round-trip-category',
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $category = BlogCategory::whereJsonContains('title->en', 'Round Trip Category')->first();
+        $this->assertNotNull($category);
+
+        // Reload on edit page and verify slug is pre-populated
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->assertFormSet(fn (array $data) => $this->assertSame('round-trip-category', $data['slug_en'] ?? null));
+    }
+
+    public function test_slug_round_trip_auto_generated_slug_reloaded_in_edit_form(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        // Create category without explicit slug — slug auto-generated from title
+        Livewire::test(CreateBlogCategory::class)
+            ->fillForm([
+                'title_en' => 'Auto Round Trip',
+                'title_de' => 'Auto Hin Und Rück',
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $category = BlogCategory::whereJsonContains('title->en', 'Auto Round Trip')->first();
+        $this->assertNotNull($category);
+
+        // Verify auto-slugs are saved in the DB
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'en',
+            'slug'           => 'auto-round-trip',
+        ]);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'de',
+            'slug'           => 'auto-hin-und-ruck',
+        ]);
+
+        // Reload on edit page and verify both slugs are pre-populated
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->assertFormSet(fn (array $data) => $this->assertSame('auto-round-trip', $data['slug_en'] ?? null))
+            ->assertFormSet(fn (array $data) => $this->assertSame('auto-hin-und-ruck', $data['slug_de'] ?? null));
+    }
+
+    // ── Slug Per-Locale Independence ───────────────────────────────────────
+
+    public function test_per_locale_slugs_are_stored_independently_per_language(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+        Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
+
+        Livewire::test(CreateBlogCategory::class)
+            ->fillForm([
+                'title_en' => 'Technology',
+                'slug_en'  => 'technology-en',
+                'title_de' => 'Technologie',
+                'slug_de'  => 'technologie-de',
+                'status'   => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $category = BlogCategory::whereJsonContains('title->en', 'Technology')->first();
+        $this->assertNotNull($category);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'en',
+            'slug'           => 'technology-en',
+        ]);
+
+        $this->assertDatabaseHas('slugs', [
+            'sluggable_type' => BlogCategory::class,
+            'sluggable_id'   => $category->id,
+            'locale'         => 'de',
+            'slug'           => 'technologie-de',
+        ]);
+
+        // Each language should have exactly one slug record
+        $this->assertCount(2, $category->slugs);
+    }
+
+    public function test_slug_edit_uniqueness_validation_ignores_own_slug(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+
+        $category = BlogCategory::factory()->create([
+            'title'  => ['en' => 'Self Unique Category'],
+            'status' => 'active',
+        ]);
+
+        $category->slugs()->updateOrCreate(
+            ['locale' => 'en'],
+            [
+                'sluggable_type' => BlogCategory::class,
+                'sluggable_id'   => $category->id,
+                'slug'           => 'self-unique-slug',
+            ]
+        );
+
+        // Editing the same record with its existing slug should not trigger a uniqueness error
+        Livewire::test(EditBlogCategory::class, ['record' => $category->getRouteKey()])
+            ->fillForm([
+                'title_en' => 'Self Unique Category',
+                'slug_en'  => 'self-unique-slug',
+                'status'   => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
     }
 
     // ── Translatable Field Mutation ────────────────────────────────────────
