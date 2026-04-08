@@ -129,14 +129,29 @@ class GeneralSettingsPage extends Page
         $settings = app(GeneralSettings::class);
         $languages = Language::orderByDesc('is_default')->orderBy('name')->get();
 
+        // Spatie Settings exposes properties via __get()/__set() magic. Mutating an array
+        // property in-place (e.g. $settings->site_title[$code] = ...) triggers a PHP
+        // "indirect modification of overloaded property" error because __get() returns a
+        // copy, not a reference. The required pattern is: read the whole array into a local
+        // variable, modify the local variable, then reassign it back via __set().
+        $site_title = $settings->site_title;
+        $meta_title = $settings->meta_title;
+        $meta_description = $settings->meta_description;
+        $meta_keywords = $settings->meta_keywords;
+
         foreach ($languages as $language) {
             $code = $language->code;
 
-            $settings->site_title[$code] = $data["site_title_{$code}"] ?? '';
-            $settings->meta_title[$code] = $data["meta_title_{$code}"] ?? '';
-            $settings->meta_description[$code] = $data["meta_description_{$code}"] ?? '';
-            $settings->meta_keywords[$code] = $data["meta_keywords_{$code}"] ?? '';
+            $site_title[$code] = $data["site_title_{$code}"] ?? '';
+            $meta_title[$code] = $data["meta_title_{$code}"] ?? '';
+            $meta_description[$code] = $data["meta_description_{$code}"] ?? '';
+            $meta_keywords[$code] = $data["meta_keywords_{$code}"] ?? '';
         }
+
+        $settings->site_title = $site_title;
+        $settings->meta_title = $meta_title;
+        $settings->meta_description = $meta_description;
+        $settings->meta_keywords = $meta_keywords;
 
         $settings->is_open = (bool) ($data['is_open'] ?? true);
         $settings->logo = $data['logo'] ?? null;

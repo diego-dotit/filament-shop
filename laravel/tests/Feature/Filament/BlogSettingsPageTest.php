@@ -24,14 +24,14 @@ class BlogSettingsPageTest extends TestCase
         $this->actingAs($this->admin);
 
         Language::factory()->create([
-            'code'       => 'en',
-            'name'       => 'English',
+            'code' => 'en',
+            'name' => 'English',
             'is_default' => true,
         ]);
 
         Language::factory()->create([
-            'code'       => 'de',
-            'name'       => 'German',
+            'code' => 'de',
+            'name' => 'German',
             'is_default' => false,
         ]);
     }
@@ -100,14 +100,14 @@ class BlogSettingsPageTest extends TestCase
     {
         /** @var GeneralBlogSettings $settings */
         $settings = app(GeneralBlogSettings::class);
-        $settings->blog_title      = ['en' => 'My Blog', 'de' => 'Mein Blog'];
+        $settings->blog_title = ['en' => 'My Blog', 'de' => 'Mein Blog'];
         $settings->articles_per_page = 5;
         $settings->save();
 
         Livewire::test(BlogSettingsPage::class)
             ->assertFormSet([
-                'blog_title_en'    => 'My Blog',
-                'blog_title_de'    => 'Mein Blog',
+                'blog_title_en' => 'My Blog',
+                'blog_title_de' => 'Mein Blog',
                 'articles_per_page' => 5,
             ]);
     }
@@ -230,9 +230,9 @@ class BlogSettingsPageTest extends TestCase
         // Submit the form to save settings
         Livewire::test(BlogSettingsPage::class)
             ->fillForm([
-                'blog_title_en'    => 'Persisted Blog Title',
+                'blog_title_en' => 'Persisted Blog Title',
                 'articles_per_page' => 20,
-                'slug_en'          => 'persisted-blog',
+                'slug_en' => 'persisted-blog',
             ])
             ->call('save')
             ->assertHasNoFormErrors();
@@ -240,9 +240,82 @@ class BlogSettingsPageTest extends TestCase
         // Reload the page (new instance) and verify values are pre-populated
         Livewire::test(BlogSettingsPage::class)
             ->assertFormSet([
-                'blog_title_en'    => 'Persisted Blog Title',
+                'blog_title_en' => 'Persisted Blog Title',
                 'articles_per_page' => 20,
-                'slug_en'          => 'persisted-blog',
+                'slug_en' => 'persisted-blog',
             ]);
+    }
+
+    // ── Slug Auto-generation ───────────────────────────────────────────────
+
+    public function test_updating_blog_title_auto_generates_slug_when_slug_is_empty(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.slug_en', '')
+            ->set('data.blog_title_en', 'My Awesome Blog')
+            ->assertSet('data.slug_en', 'my-awesome-blog');
+    }
+
+    public function test_updating_blog_title_auto_generates_slug_with_correct_slugification(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.slug_en', '')
+            ->set('data.blog_title_en', 'Hello World & Stuff!')
+            ->assertSet('data.slug_en', 'hello-world-stuff');
+    }
+
+    public function test_auto_generated_slug_is_updated_when_title_changes_and_slug_still_matches(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.blog_title_en', 'Original Title')
+            ->assertSet('data.slug_en', 'original-title')
+            ->set('data.blog_title_en', 'Updated Title')
+            ->assertSet('data.slug_en', 'updated-title');
+    }
+
+    public function test_slug_auto_generation_persists_after_save(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.slug_en', '')
+            ->set('data.blog_title_en', 'Generated Slug Blog')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $settings = app()->make(GeneralBlogSettings::class);
+        $this->assertSame('generated-slug-blog', $settings->slug['en']);
+    }
+
+    // ── Slug Manual Override ───────────────────────────────────────────────
+
+    public function test_manual_slug_is_not_overwritten_when_title_changes(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.blog_title_en', 'Original Title')
+            ->set('data.slug_en', 'custom-manual-slug')
+            // Changing the title should NOT overwrite the manually-set slug
+            ->set('data.blog_title_en', 'Updated Title')
+            ->assertSet('data.slug_en', 'custom-manual-slug');
+    }
+
+    public function test_manual_slug_override_persists_after_save(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.blog_title_en', 'Some Blog Title')
+            ->set('data.slug_en', 'my-custom-override')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $settings = app()->make(GeneralBlogSettings::class);
+        $this->assertSame('my-custom-override', $settings->slug['en']);
+    }
+
+    public function test_slug_auto_generation_is_isolated_per_locale(): void
+    {
+        Livewire::test(BlogSettingsPage::class)
+            ->set('data.slug_en', '')
+            ->set('data.slug_de', '')
+            ->set('data.blog_title_de', 'Mein Blog')
+            ->assertSet('data.slug_de', 'mein-blog')
+            ->assertSet('data.slug_en', '');
     }
 }
