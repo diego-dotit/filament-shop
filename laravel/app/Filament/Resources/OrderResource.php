@@ -6,7 +6,10 @@ use App\Domains\Customer\Models\Customer;
 use App\Domains\Order\Models\Order;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
+use App\Filament\Resources\OrderResource\Pages\CreateOrder;
+use App\Filament\Resources\OrderResource\Pages\EditOrder;
 use App\Filament\Resources\OrderResource\Pages\ListOrders;
+use App\Filament\Resources\OrderResource\Pages\ViewOrder;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -51,8 +54,7 @@ class OrderResource extends Resource
                 TextColumn::make('total_amount')
                     ->label('Total')
                     ->formatStateUsing(
-                        fn ($state, Order $record): string =>
-                            $record->currency_code . ' ' . number_format((float) $state, 2)
+                        fn ($state, Order $record): string => $record->currency_code.' '.number_format((float) $state, 2)
                     )
                     ->sortable(),
 
@@ -64,11 +66,11 @@ class OrderResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending'    => 'Pending',
+                        'pending' => 'Pending',
                         'processing' => 'Processing',
-                        'shipped'    => 'Shipped',
-                        'completed'  => 'Completed',
-                        'cancelled'  => 'Cancelled',
+                        'shipped' => 'Shipped',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
                     ]),
             ])
             ->actions([
@@ -88,7 +90,7 @@ class OrderResource extends Resource
                         Forms\Components\Select::make('customer_id')
                             ->label('Customer')
                             ->relationship('customer', 'id')
-                            ->getOptionLabelFromRecordUsing(fn (Customer $record): string => $record->first_name . ' ' . $record->last_name)
+                            ->getOptionLabelFromRecordUsing(fn (Customer $record): string => $record->first_name.' '.$record->last_name)
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -96,11 +98,11 @@ class OrderResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
-                                'pending'    => 'Pending',
+                                'pending' => 'Pending',
                                 'processing' => 'Processing',
-                                'shipped'    => 'Shipped',
-                                'completed'  => 'Completed',
-                                'cancelled'  => 'Cancelled',
+                                'shipped' => 'Shipped',
+                                'completed' => 'Completed',
+                                'cancelled' => 'Cancelled',
                             ])
                             ->required(),
 
@@ -221,7 +223,11 @@ class OrderResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
-                                    ->options(fn (): array => Product::query()->pluck('name', 'id')->toArray())
+                                    ->options(fn (): array => Product::query()->get()->mapWithKeys(
+                                        fn (Product $product): array => [
+                                            $product->id => $product->getTranslation('name', app()->getLocale()) ?: ($product->name ?: ''),
+                                        ]
+                                    )->toArray())
                                     ->searchable()
                                     ->required()
                                     ->live(),
@@ -260,10 +266,10 @@ class OrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListOrders::route('/'),
-            'view'   => \App\Filament\Resources\OrderResource\Pages\ViewOrder::route('/{record}'),
-            'create' => \App\Filament\Resources\OrderResource\Pages\CreateOrder::route('/create'),
-            'edit'   => \App\Filament\Resources\OrderResource\Pages\EditOrder::route('/{record}/edit'),
+            'index' => ListOrders::route('/'),
+            'view' => ViewOrder::route('/{record}'),
+            'create' => CreateOrder::route('/create'),
+            'edit' => EditOrder::route('/{record}/edit'),
         ];
     }
 }
