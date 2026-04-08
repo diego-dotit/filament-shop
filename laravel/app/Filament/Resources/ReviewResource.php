@@ -2,17 +2,23 @@
 
 namespace App\Filament\Resources;
 
+use App\Domains\Customer\Models\Customer;
+use App\Domains\Product\Models\Product;
 use App\Domains\Review\Models\Review;
+use App\Filament\Resources\ReviewResource\Pages\CreateReview;
+use App\Filament\Resources\ReviewResource\Pages\EditReview;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
+use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 
 class ReviewResource extends Resource
 {
@@ -32,7 +38,62 @@ class ReviewResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema([]);
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Review Information')
+                    ->schema([
+                        Forms\Components\Select::make('product_id')
+                            ->label('Product')
+                            ->relationship('product', 'name')
+                            ->getOptionLabelFromRecordUsing(
+                                fn (Product $record): string => $record->getTranslation('name', app()->getLocale()) ?: ($record->name ?: '')
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+                        Forms\Components\Select::make('customer_id')
+                            ->label('Customer')
+                            ->relationship('customer', 'id')
+                            ->getOptionLabelFromRecordUsing(
+                                fn (Customer $record): string => $record->first_name.' '.$record->last_name
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->rules(fn (Get $get, Forms\Components\Component $component): array => $get('product_id')
+                                ? [
+                                    Rule::unique('reviews', 'customer_id')
+                                        ->where('product_id', $get('product_id'))
+                                        ->ignore($component->getRecord()?->id),
+                                ]
+                                : []),
+
+                        Forms\Components\Select::make('rating')
+                            ->label('Rating')
+                            ->options([
+                                1 => '1 Star',
+                                2 => '2 Stars',
+                                3 => '3 Stars',
+                                4 => '4 Stars',
+                                5 => '5 Stars',
+                            ])
+                            ->required(),
+
+                        Forms\Components\Textarea::make('comment')
+                            ->label('Comment')
+                            ->columnSpanFull(),
+
+                        Forms\Components\Select::make('status')
+                            ->label('Status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'approved' => 'Approved',
+                                'rejected' => 'Rejected',
+                            ])
+                            ->required(),
+                    ]),
+            ]);
     }
 
     // -----------------------------------------------------------------------
@@ -54,11 +115,11 @@ class ReviewResource extends Resource
 
                 TextColumn::make('customer.first_name')
                     ->label('Customer')
-                    ->formatStateUsing(fn (Review $record): string => trim(($record->customer?->first_name ?? '') . ' ' . ($record->customer?->last_name ?? '')))
+                    ->formatStateUsing(fn (Review $record): string => trim(($record->customer?->first_name ?? '').' '.($record->customer?->last_name ?? '')))
                     ->searchable(query: function ($query, string $search): void {
                         $query->whereHas('customer', function ($q) use ($search) {
                             $q->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%");
+                                ->orWhere('last_name', 'like', "%{$search}%");
                         });
                     }),
 
@@ -75,7 +136,7 @@ class ReviewResource extends Resource
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
-                        'danger'  => 'rejected',
+                        'danger' => 'rejected',
                     ])
                     ->sortable(),
 
@@ -87,7 +148,7 @@ class ReviewResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending'  => 'Pending',
+                        'pending' => 'Pending',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                     ]),
@@ -130,6 +191,8 @@ class ReviewResource extends Resource
     {
         return [
             'index' => ListReviews::route('/'),
+            'create' => CreateReview::route('/create'),
+            'edit' => EditReview::route('/{record}/edit'),
         ];
     }
 }
