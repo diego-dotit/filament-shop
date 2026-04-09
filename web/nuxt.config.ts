@@ -13,5 +13,39 @@ export default defineNuxtConfig({
     shadcn: {
         prefix: '',
         componentDir: '@/components/ui',
+    },
+    vite: {
+        server: {
+            allowedHosts: [
+                'dev.dotit.ro'
+            ]
+        }
+    },
+    fonts: {
+        provider: 'local',
+        families: [
+            {
+                name: 'DMfont',
+                as: 'custom-dmfont-family',
+                provider: 'local',
+                src: '~/public/fonts/DM_Sans/DMSans-variable.ttf',
+                subsets: ['latin', 'greek'],
+                display: 'swap',
+                weight: ['400', '700'],
+                style: ['normal'],
+                fallbacks: ['Arial'],
+            },
+            {
+                name: 'DMfont',
+                as: 'custom-dmfont-family',
+                provider: 'local',
+                src: '~/public/fonts/DM_Sans/DMSans-Italic-variable.ttf',
+                subsets: ['latin', 'greek'],
+                display: 'swap',
+                weight: ['400', '700'],
+                style: ['normal', 'italic'],
+                fallbacks: ['Arial'],
+            },
+        ]
     }
 })
