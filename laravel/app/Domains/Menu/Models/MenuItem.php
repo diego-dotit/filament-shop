@@ -45,4 +45,35 @@ class MenuItem extends Model
     {
         return $this->hasMany(MenuItem::class, 'parent_id');
     }
+
+    // -----------------------------------------------------------------------
+    // Tree helpers (used by solution-forest/filament-tree)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Identifies root-level items (no parent).
+     * Used by filament-tree's getRootLayerRecords() to detect root nodes.
+     */
+    public function isRoot(): bool
+    {
+        return $this->parent_id === null;
+    }
+
+    /**
+     * Tells filament-tree which column stores the sort order.
+     * Overrides the package default ('order') to match our 'sort' column.
+     */
+    public function determineOrderColumnName(): string
+    {
+        return 'sort';
+    }
+
+    /**
+     * The default parent key value for root items.
+     * Tells filament-tree to store null for root-level parent_id.
+     */
+    public static function defaultParentKey(): mixed
+    {
+        return null;
+    }
 }

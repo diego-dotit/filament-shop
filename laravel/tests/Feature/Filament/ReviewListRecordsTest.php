@@ -6,6 +6,7 @@ use App\Domains\Review\Models\Review;
 use App\Filament\Resources\ReviewResource;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
 use App\Models\User;
+use Filament\Actions\CreateAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -215,5 +216,35 @@ class ReviewListRecordsTest extends TestCase
         Livewire::test(ListReviews::class)
             ->filterTable('status', 'rejected')
             ->assertTableActionHidden('reject', $review);
+    }
+
+    // -----------------------------------------------------------------------
+    // Header actions
+    // -----------------------------------------------------------------------
+
+    public function test_list_reviews_get_header_actions_returns_create_action(): void
+    {
+        $reflection = new \ReflectionClass(ListReviews::class);
+        $method = $reflection->getMethod('getHeaderActions');
+        $method->setAccessible(true);
+
+        $instance = $reflection->newInstanceWithoutConstructor();
+        $actions = $method->invoke($instance);
+
+        $this->assertCount(1, $actions);
+        $this->assertInstanceOf(CreateAction::class, $actions[0]);
+    }
+
+    public function test_list_reviews_create_action_has_label(): void
+    {
+        $reflection = new \ReflectionClass(ListReviews::class);
+        $method = $reflection->getMethod('getHeaderActions');
+        $method->setAccessible(true);
+
+        $instance = $reflection->newInstanceWithoutConstructor();
+        $actions = $method->invoke($instance);
+
+        $createAction = $actions[0];
+        $this->assertSame('New review', $createAction->getLabel());
     }
 }
