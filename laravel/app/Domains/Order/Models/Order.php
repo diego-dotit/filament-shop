@@ -3,14 +3,15 @@
 namespace App\Domains\Order\Models;
 
 use App\Domains\Customer\Models\Customer;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
     use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -32,7 +33,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'total_amount'  => 'decimal:2',
+            'total_amount' => 'decimal:2',
             'exchange_rate' => 'decimal:6',
         ];
     }
@@ -58,11 +59,11 @@ class Order extends Model
 
     public function billingAddress(): HasMany
     {
-        return $this->hasMany(OrderAddress::class)->where('type', 'billing');
+        return $this->hasMany(OrderAddress::class)->where('shipping', 0);
     }
 
     public function shippingAddress(): HasMany
     {
-        return $this->hasMany(OrderAddress::class)->where('type', 'shipping');
+        return $this->hasMany(OrderAddress::class)->where('shipping', 1);
     }
 }

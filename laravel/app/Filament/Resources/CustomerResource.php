@@ -130,19 +130,20 @@ class CustomerResource extends Resource
                                     ->label('Country')
                                     ->options(fn (): array => Country::pluck('name', 'id')->toArray())
                                     ->live()
-                                    ->searchable()
-                                    ->required(),
+                                    ->searchable(),
 
                                 Forms\Components\Select::make('zone_id')
                                     ->label('Zone')
                                     ->options(fn (Get $get): array => $get('country_id') ? Zone::where('country_id', $get('country_id'))->pluck('name', 'id')->toArray() : [])
                                     ->live()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->nullable(),
 
                                 Forms\Components\Select::make('city_id')
                                     ->label('City')
                                     ->options(fn (Get $get): array => $get('zone_id') ? City::where('zone_id', $get('zone_id'))->pluck('name', 'id')->toArray() : [])
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->nullable(),
 
                                 Forms\Components\TextInput::make('address_line_1')
                                     ->label('Address Line 1')

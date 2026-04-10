@@ -188,8 +188,7 @@ class OrderResource extends Resource
                                     ->label('Country')
                                     ->options(fn (): array => Country::pluck('name', 'id')->toArray())
                                     ->live()
-                                    ->searchable()
-                                    ->required(),
+                                    ->searchable(),
 
                                 Forms\Components\Select::make('zone_id')
                                     ->label('Zone')
@@ -276,8 +275,7 @@ class OrderResource extends Resource
                                     ->label('Country')
                                     ->options(fn (): array => Country::pluck('name', 'id')->toArray())
                                     ->live()
-                                    ->searchable()
-                                    ->required(),
+                                    ->searchable(),
 
                                 Forms\Components\Select::make('zone_id')
                                     ->label('Zone')

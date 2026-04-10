@@ -12,7 +12,9 @@ class EditOrder extends EditRecord
     protected static string $resource = OrderResource::class;
 
     private array $pendingItems = [];
+
     private array $pendingBillingAddresses = [];
+
     private array $pendingShippingAddresses = [];
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -29,27 +31,29 @@ class EditOrder extends EditRecord
             ->toArray();
 
         $data['billing_addresses'] = $this->record->addresses
-            ->where('type', 'billing')
+            ->where('shipping', 0)
             ->map(fn (OrderAddress $address) => $address->only([
-                'country',
-                'city',
+                'country_id',
+                'zone_id',
+                'city_id',
                 'address_line_1',
                 'address_line_2',
                 'postcode',
-                'type',
+                'shipping',
             ]))
             ->values()
             ->toArray();
 
         $data['shipping_addresses'] = $this->record->addresses
-            ->where('type', 'shipping')
+            ->where('shipping', 1)
             ->map(fn (OrderAddress $address) => $address->only([
-                'country',
-                'city',
+                'country_id',
+                'zone_id',
+                'city_id',
                 'address_line_1',
                 'address_line_2',
                 'postcode',
-                'type',
+                'shipping',
             ]))
             ->values()
             ->toArray();
