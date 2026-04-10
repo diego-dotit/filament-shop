@@ -61,7 +61,7 @@ return new class extends Migration
                 SELECT
                     "id", "customer_id", 0, 0,
                     \'\', \'\', NULL, NULL, NULL,
-                    0, NULL, NULL,
+                    NULL, NULL, NULL,
                     "address_line_1", "address_line_2", "postcode",
                     "created_at", "updated_at"
                 FROM "customer_addresses"
@@ -86,6 +86,7 @@ return new class extends Migration
             $table->string('company')->nullable()->after('lastname');
             $table->string('company_id')->nullable()->after('company');
             $table->string('tax_id')->nullable()->after('company_id');
+            // TODO: country_id should be NOT NULL per spec; requires a data backfill migration before enforcing NOT NULL
             $table->unsignedBigInteger('country_id')->nullable()->after('tax_id');
             $table->unsignedBigInteger('zone_id')->nullable()->after('country_id');
             $table->unsignedBigInteger('city_id')->nullable()->after('zone_id');

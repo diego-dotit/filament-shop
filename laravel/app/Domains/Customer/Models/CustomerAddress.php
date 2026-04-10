@@ -17,8 +17,16 @@ class CustomerAddress extends Model
      */
     protected $fillable = [
         'customer_id',
-        'country',
-        'city',
+        'shipping',
+        'business',
+        'firstname',
+        'lastname',
+        'company',
+        'company_id',
+        'tax_id',
+        'country_id',
+        'zone_id',
+        'city_id',
         'address_line_1',
         'address_line_2',
         'postcode',
@@ -32,6 +40,8 @@ class CustomerAddress extends Model
     protected function casts(): array
     {
         return [
+            'shipping'   => 'boolean',
+            'business'   => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

@@ -16,13 +16,29 @@ class OrderAddress extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'customer_address_id',
-        'type',
-        'country',
-        'city',
+        'shipping',
+        'business',
+        'firstname',
+        'lastname',
+        'company',
+        'company_id',
+        'tax_id',
+        'country_id',
+        'zone_id',
+        'city_id',
         'address_line_1',
         'address_line_2',
         'postcode',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'shipping' => 'boolean',
+        'business' => 'boolean',
     ];
 
     // -----------------------------------------------------------------------
