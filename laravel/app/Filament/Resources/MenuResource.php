@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Domains\Menu\Models\Menu;
+use App\Filament\Resources\MenuResource\Pages\CreateMenu;
 use App\Filament\Resources\MenuResource\Pages\EditMenu;
 use App\Filament\Resources\MenuResource\Pages\ListMenus;
 use Filament\Forms\Components\TextInput;
@@ -67,6 +68,7 @@ class MenuResource extends Resource
     {
         return [
             'index' => ListMenus::route('/'),
+            'create' => CreateMenu::route('/create'),
             'edit' => EditMenu::route('/{record}/edit'),
         ];
     }

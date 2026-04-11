@@ -80,7 +80,7 @@ class EditMenu extends EditRecord implements HasTree
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     protected function getHeaderActions(): array
@@ -263,7 +263,7 @@ class EditMenu extends EditRecord implements HasTree
                     Forms\Components\TextInput::make("name_{$lang->code}")
                         ->label("Name ({$lang->code})")
                         ->maxLength(255)
-                    ->required($lang->is_default),
+                        ->required($lang->is_default),
                 ])
         )->all();
 
