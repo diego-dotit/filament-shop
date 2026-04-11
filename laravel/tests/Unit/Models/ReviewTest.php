@@ -17,7 +17,7 @@ class ReviewTest extends TestCase
     public function test_review_has_correct_fillable_fields(): void
     {
         $review = new Review();
-        $this->assertSame(['product_id', 'customer_id', 'rating', 'comment', 'status'], $review->getFillable());
+        $this->assertSame(['product_id', 'customer_id', 'rating', 'author', 'comment', 'status'], $review->getFillable());
     }
 
     public function test_review_casts_rating_as_integer(): void

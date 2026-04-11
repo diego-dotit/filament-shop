@@ -59,15 +59,7 @@ class ReviewResource extends Resource
                                 fn (Customer $record): string => $record->first_name.' '.$record->last_name
                             )
                             ->searchable()
-                            ->preload()
-                            ->required()
-                            ->rules(fn (Get $get, Forms\Components\Component $component): array => $get('product_id')
-                                ? [
-                                    Rule::unique('reviews', 'customer_id')
-                                        ->where('product_id', $get('product_id'))
-                                        ->ignore($component->getRecord()?->id),
-                                ]
-                                : []),
+                            ->preload(),
 
                         Forms\Components\Select::make('rating')
                             ->label('Rating')

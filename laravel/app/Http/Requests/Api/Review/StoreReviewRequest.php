@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\Review;
 
+use App\Domains\Customer\Models\Customer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,9 +36,10 @@ class StoreReviewRequest extends FormRequest
      */
     public function rules(): array
     {
-        $customerId = auth()->check()
-            ? optional(auth()->user()->customer)->id
-            : null;
+        $user = auth()->user();
+        $customerId = $user instanceof Customer
+            ? $user->id
+            : optional($user?->customer)->id;
 
         $productIdRules = ['required', 'integer', 'exists:products,id'];
 
