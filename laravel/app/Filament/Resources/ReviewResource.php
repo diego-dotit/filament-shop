@@ -8,6 +8,7 @@ use App\Domains\Review\Models\Review;
 use App\Filament\Resources\ReviewResource\Pages\CreateReview;
 use App\Filament\Resources\ReviewResource\Pages\EditReview;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
+use App\Rules\RequiresAtLeastOne;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -59,7 +60,13 @@ class ReviewResource extends Resource
                                 fn (Customer $record): string => $record->first_name.' '.$record->last_name
                             )
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->rules(fn (Get $get): array => [new RequiresAtLeastOne('author', $get)]),
+
+                        Forms\Components\TextInput::make('author')
+                            ->label('Author')
+                            ->maxLength(255)
+                            ->rules(fn (Get $get): array => [new RequiresAtLeastOne('customer_id', $get)]),
 
                         Forms\Components\Select::make('rating')
                             ->label('Rating')

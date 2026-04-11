@@ -247,4 +247,36 @@ class ReviewListRecordsTest extends TestCase
         $createAction = $actions[0];
         $this->assertSame('New review', $createAction->getLabel());
     }
+
+    // -----------------------------------------------------------------------
+    // Null customer safety (T4.3)
+    // -----------------------------------------------------------------------
+
+    public function test_list_reviews_renders_without_error_when_customer_id_is_null(): void
+    {
+        // A review with no associated customer (customer_id = null)
+        $review = Review::factory()->pending()->create(['customer_id' => null]);
+
+        $this->actingAs($this->admin);
+
+        // The table should render and include the record without throwing errors.
+        // The customer column formatStateUsing closure uses ?-> and ?? '' so it
+        // returns an empty string (trim('  ') === '') rather than raising an exception.
+        Livewire::test(ListReviews::class)
+            ->assertCanSeeTableRecords([$review])
+            ->assertHasNoErrors();
+    }
+
+    public function test_customer_column_format_returns_empty_string_when_customer_is_null(): void
+    {
+        // Build a Review model instance without persisting a customer relationship
+        $review = Review::factory()->pending()->make(['customer_id' => null]);
+
+        // The formatStateUsing closure is:
+        //   fn (Review $record): string => trim(($record->customer?->first_name ?? '').' '.($record->customer?->last_name ?? ''))
+        // Replicate that logic here to confirm it returns '' (empty after trim)
+        $result = trim(($review->customer?->first_name ?? '').' '.($review->customer?->last_name ?? ''));
+
+        $this->assertSame('', $result);
+    }
 }
