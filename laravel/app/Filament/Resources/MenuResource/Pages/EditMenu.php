@@ -80,7 +80,7 @@ class EditMenu extends EditRecord implements HasTree
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->previousUrl ?? $this->getResource()::getUrl('index');
     }
 
     protected function getHeaderActions(): array

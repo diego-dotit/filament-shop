@@ -38,4 +38,12 @@ class CreateCustomer extends CreateRecord
             $this->record->addresses()->create([...$address]);
         }
     }
+
+    /**
+     * Redirect back to the previous URL (preserving filters) or fall back to the index page.
+     */
+    protected function getRedirectUrl(): string
+    {
+        return $this->previousUrl ?? $this->getResource()::getUrl('index');
+    }
 }

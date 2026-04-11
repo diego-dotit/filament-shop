@@ -33,4 +33,9 @@ class EditCustomer extends EditRecord
 
         return $data;
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->previousUrl ?? $this->getResource()::getUrl('index');
+    }
 }

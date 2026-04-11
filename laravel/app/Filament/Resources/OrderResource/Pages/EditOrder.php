@@ -87,4 +87,9 @@ class EditOrder extends EditRecord
             $this->record->addresses()->create($address);
         }
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->previousUrl ?? $this->getResource()::getUrl('index');
+    }
 }
