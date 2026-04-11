@@ -86,6 +86,13 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::table('reviews')->whereNull('customer_id')->exists()) {
+            throw new \RuntimeException(
+                'Cannot reverse migration: the reviews table contains rows with NULL customer_id. ' .
+                'Remove or reassign those rows before rolling back.'
+            );
+        }
+
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'sqlite') {
