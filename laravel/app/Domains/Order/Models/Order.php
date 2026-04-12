@@ -22,6 +22,7 @@ class Order extends Model
         'status',
         'total_amount',
         'currency_code',
+        'language_code',
         'exchange_rate',
     ];
 
@@ -65,5 +66,15 @@ class Order extends Model
     public function shippingAddress(): HasMany
     {
         return $this->hasMany(OrderAddress::class)->where('shipping', 1);
+    }
+
+    public function totals(): HasMany
+    {
+        return $this->hasMany(OrderTotal::class);
+    }
+
+    public function history(): HasMany
+    {
+        return $this->hasMany(OrderHistory::class);
     }
 }
