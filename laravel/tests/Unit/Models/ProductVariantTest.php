@@ -42,7 +42,7 @@ class ProductVariantTest extends TestCase
         $variant = new ProductVariant();
 
         $this->assertSame(
-            ['product_id', 'sku', 'regular_price', 'special_price', 'stock_quantity', 'weight', 'is_active'],
+            ['product_id', 'sku', 'name', 'regular_price', 'special_price', 'stock_quantity', 'weight', 'is_active'],
             $variant->getFillable()
         );
     }

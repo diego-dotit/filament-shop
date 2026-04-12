@@ -161,7 +161,8 @@ class ProductResource extends Resource
                                             ->schema([
                                                 Forms\Components\TextInput::make("name_{$language->code}")
                                                     ->label('Name')
-                                                    ->required($language->is_default),
+                                                    ->required($language->is_default)
+                                                    ->maxLength(255),
                                             ]);
                                     })->toArray()
                                 )

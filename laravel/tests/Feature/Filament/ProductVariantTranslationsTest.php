@@ -121,7 +121,6 @@ class ProductVariantTranslationsTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $product = Product::where('slug', 'widget')->first();
         $variant = ProductVariant::where('sku', 'SKU-WIDGET-S')->first();
 
         $this->assertNotNull($variant);
@@ -305,6 +304,59 @@ class ProductVariantTranslationsTest extends TestCase
                 $this->assertSame('Round-Trip Variant EN', $found['name_en'] ?? null);
                 $this->assertSame('Variante Aller-Retour FR', $found['name_fr'] ?? null);
             });
+    }
+
+    // ── Edit → Save: mutateRelationshipDataBeforeSaveUsing path ──────────
+
+    /**
+     * Editing a product and saving with updated variant names must persist the
+     * new translations via the mutateRelationshipDataBeforeSaveUsing callback.
+     */
+    public function test_edit_product_saves_updated_variant_names_to_database(): void
+    {
+        Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
+        Language::factory()->create(['code' => 'fr', 'name' => 'French', 'is_default' => false]);
+
+        $product = Product::factory()->create([
+            'name' => ['en' => 'Original Product', 'fr' => 'Produit Original'],
+            'slug' => 'original-product',
+            'is_active' => true,
+        ]);
+
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => ['en' => 'Original Variant', 'fr' => 'Variante Originale'],
+            'sku' => 'SKU-SAVE-001',
+            'regular_price' => 25.00,
+            'stock_quantity' => 10,
+            'weight' => 0.5,
+            'is_active' => true,
+        ]);
+
+        $lw = Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()]);
+
+        // Capture the existing form state (variant items are keyed by UUID so the
+        // repeater recognises them as existing records and calls BeforeSaveUsing).
+        $variantState = [];
+        $lw->assertFormSet(function (array $state) use (&$variantState): void {
+            $variantState = $state['variants'] ?? [];
+        });
+
+        // Modify only the name fields; keep every other field (sku, price, etc.)
+        // and, crucially, keep the original UUID keys so Filament updates the
+        // existing variant rather than creating a new one.
+        foreach ($variantState as &$item) {
+            $item['name_en'] = 'Updated Variant EN';
+            $item['name_fr'] = 'Variante Mise à Jour FR';
+        }
+        unset($item);
+
+        $lw->fillForm(['variants' => $variantState])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Updated Variant EN', $variant->fresh()->getTranslation('name', 'en'));
+        $this->assertSame('Variante Mise à Jour FR', $variant->fresh()->getTranslation('name', 'fr'));
     }
 
     /**
