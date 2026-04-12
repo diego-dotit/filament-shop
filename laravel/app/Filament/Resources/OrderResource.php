@@ -127,13 +127,13 @@ class OrderResource extends Resource
                         Forms\Components\TextInput::make('exchange_rate')
                             ->label('Exchange Rate')
                             ->numeric()
-                            ->decimalPlaces(6)
+                            ->step('0.000001')
                             ->required(),
 
                         Forms\Components\TextInput::make('total_amount')
                             ->label('Total Amount')
                             ->numeric()
-                            ->decimalPlaces(2)
+                            ->step('0.01')
                             ->disabled()
                             ->hidden(fn (string $operation): bool => $operation === 'create'),
                     ])
@@ -347,7 +347,7 @@ class OrderResource extends Resource
                                 Forms\Components\TextInput::make('unit_price_snapshot')
                                     ->label('Unit Price')
                                     ->numeric()
-                                    ->decimalPlaces(2)
+                                    ->step('0.01')
                                     ->required(),
                             ])
                             ->columns(4)
