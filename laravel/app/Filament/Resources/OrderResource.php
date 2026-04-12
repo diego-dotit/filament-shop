@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Domains\Currency\Models\Currency;
 use App\Domains\Customer\Models\Customer;
+use App\Domains\Language\Models\Language;
 use App\Domains\Localisation\Models\City;
 use App\Domains\Localisation\Models\Country;
 use App\Domains\Localisation\Models\Zone;
@@ -14,8 +16,10 @@ use App\Filament\Resources\OrderResource\Pages\EditOrder;
 use App\Filament\Resources\OrderResource\Pages\ListOrders;
 use App\Filament\Resources\OrderResource\Pages\ViewOrder;
 use Filament\Forms;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -110,25 +114,26 @@ class OrderResource extends Resource
 
                         Forms\Components\Select::make('currency_code')
                             ->label('Currency')
-                            ->options([
-                                'USD' => 'USD',
-                                'EUR' => 'EUR',
-                                'GBP' => 'GBP',
-                                'CAD' => 'CAD',
-                                'AUD' => 'AUD',
-                                'JPY' => 'JPY',
-                                'CHF' => 'CHF',
-                                'CNY' => 'CNY',
-                                'INR' => 'INR',
-                                'MXN' => 'MXN',
-                            ])
+                            ->options(fn (): array => Currency::pluck('name', 'code')->toArray())
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                $currency = Currency::where('code', $state)->first();
+                                $set('exchange_rate', $currency?->exchange_rate ?? '1.0000000');
+                            })
                             ->required(),
 
                         Forms\Components\TextInput::make('exchange_rate')
                             ->label('Exchange Rate')
                             ->numeric()
                             ->step('0.000001')
+                            ->default('1.0000000')
                             ->required(),
+
+                        Forms\Components\Select::make('language_code')
+                            ->label('Language')
+                            ->options(fn (): array => Language::pluck('name', 'code')->toArray())
+                            ->searchable(),
 
                         Forms\Components\TextInput::make('total_amount')
                             ->label('Total Amount')
@@ -346,27 +351,54 @@ class OrderResource extends Resource
                                         : []
                                     )
                                     ->searchable()
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                        if ($state === null) {
+                                            return;
+                                        }
+                                        $variant = ProductVariant::find($state);
+                                        if (! $variant) {
+                                            return;
+                                        }
+                                        if ($variant->special_price !== null && $variant->special_price != 0) {
+                                            $set('unit_price_snapshot', $variant->special_price);
+                                        } else {
+                                            $set('unit_price_snapshot', $variant->regular_price);
+                                        }
+                                    }),
 
                                 Forms\Components\TextInput::make('quantity')
                                     ->label('Quantity')
                                     ->numeric()
                                     ->integer()
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live(onBlur: true),
 
                                 Forms\Components\TextInput::make('unit_price_snapshot')
                                     ->label('Unit Price')
                                     ->numeric()
                                     ->step('0.01')
-                                    ->required(),
+                                    ->required()
+                                    ->live(onBlur: true),
                             ])
                             ->columns(4)
                             ->addActionLabel('Add Item')
                             ->collapsible()
                             ->reorderable(false)
-                            ->defaultItems(0),
+                            ->defaultItems(1)
+                            ->minItems(1),
                     ]),
+
+                Placeholder::make('subtotal_display')
+                    ->label('Subtotal')
+                    ->content(function (Get $get): string {
+                        $items = $get('items') ?? [];
+                        $subtotal = collect($items)->sum(fn (array $row): float => ((float) ($row['quantity'] ?? 0)) * ((float) ($row['unit_price_snapshot'] ?? 0)));
+
+                        return number_format($subtotal, 2);
+                    }),
             ]);
     }
 
