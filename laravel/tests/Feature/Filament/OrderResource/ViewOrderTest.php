@@ -89,11 +89,16 @@ class ViewOrderTest extends TestCase
 
         $order = Order::factory()->create();
 
+        $country = \App\Domains\Localisation\Models\Country::factory()->create([
+            'name' => 'United States',
+        ]);
+
         OrderAddress::factory()->create([
             'order_id'       => $order->id,
-            'type'           => 'billing',
-            'country'        => 'United States',
-            'city'           => 'New York',
+            'shipping'       => 0,
+            'firstname'      => 'John',
+            'lastname'       => 'Doe',
+            'country_id'     => $country->id,
             'address_line_1' => '123 Main St',
             'postcode'       => '10001',
         ]);
@@ -101,8 +106,9 @@ class ViewOrderTest extends TestCase
         Livewire::actingAs($this->adminUser)
             ->test(ViewOrder::class, ['record' => $order->id])
             ->assertSee('Billing Address')
+            ->assertSee('John')
+            ->assertSee('Doe')
             ->assertSee('United States')
-            ->assertSee('New York')
             ->assertSee('123 Main St')
             ->assertSee('10001');
     }
@@ -113,11 +119,16 @@ class ViewOrderTest extends TestCase
 
         $order = Order::factory()->create();
 
+        $country = \App\Domains\Localisation\Models\Country::factory()->create([
+            'name' => 'Canada',
+        ]);
+
         OrderAddress::factory()->create([
             'order_id'       => $order->id,
-            'type'           => 'shipping',
-            'country'        => 'Canada',
-            'city'           => 'Toronto',
+            'shipping'       => 1,
+            'firstname'      => 'Jane',
+            'lastname'       => 'Smith',
+            'country_id'     => $country->id,
             'address_line_1' => '456 Maple Ave',
             'address_line_2' => 'Apt 7',
             'postcode'       => 'M5V 2T6',
@@ -126,8 +137,9 @@ class ViewOrderTest extends TestCase
         Livewire::actingAs($this->adminUser)
             ->test(ViewOrder::class, ['record' => $order->id])
             ->assertSee('Shipping Address')
+            ->assertSee('Jane')
+            ->assertSee('Smith')
             ->assertSee('Canada')
-            ->assertSee('Toronto')
             ->assertSee('456 Maple Ave')
             ->assertSee('Apt 7')
             ->assertSee('M5V 2T6');

@@ -26,11 +26,11 @@ class ViewOrder extends ViewRecord
                     Select::make('status')
                         ->label('Status')
                         ->options([
-                            'pending'    => 'Pending',
+                            'pending' => 'Pending',
                             'processing' => 'Processing',
-                            'shipped'    => 'Shipped',
-                            'completed'  => 'Completed',
-                            'cancelled'  => 'Cancelled',
+                            'shipped' => 'Shipped',
+                            'completed' => 'Completed',
+                            'cancelled' => 'Cancelled',
                         ])
                         ->required(),
                 ])
@@ -66,8 +66,7 @@ class ViewOrder extends ViewRecord
                         TextEntry::make('total_amount')
                             ->label('Total Amount')
                             ->formatStateUsing(
-                                fn ($state, $record): string =>
-                                    $record->currency_code . ' ' . number_format((float) $state, 2)
+                                fn ($state, $record): string => $record->currency_code.' '.number_format((float) $state, 2)
                             ),
                     ])
                     ->columns(2),
@@ -102,20 +101,33 @@ class ViewOrder extends ViewRecord
                         RepeatableEntry::make('billingAddress')
                             ->label('')
                             ->schema([
-                                TextEntry::make('type')
-                                    ->label('Type'),
+                                TextEntry::make('firstname')
+                                    ->label('First Name'),
 
-                                TextEntry::make('country')
+                                TextEntry::make('lastname')
+                                    ->label('Last Name'),
+
+                                TextEntry::make('company')
+                                    ->label('Company')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('country.name')
                                     ->label('Country'),
 
-                                TextEntry::make('city')
-                                    ->label('City'),
+                                TextEntry::make('zone.name')
+                                    ->label('Zone')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('city.name')
+                                    ->label('City')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('address_line_1')
                                     ->label('Address Line 1'),
 
                                 TextEntry::make('address_line_2')
-                                    ->label('Address Line 2'),
+                                    ->label('Address Line 2')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('postcode')
                                     ->label('Postcode'),
@@ -128,20 +140,33 @@ class ViewOrder extends ViewRecord
                         RepeatableEntry::make('shippingAddress')
                             ->label('')
                             ->schema([
-                                TextEntry::make('type')
-                                    ->label('Type'),
+                                TextEntry::make('firstname')
+                                    ->label('First Name'),
 
-                                TextEntry::make('country')
+                                TextEntry::make('lastname')
+                                    ->label('Last Name'),
+
+                                TextEntry::make('company')
+                                    ->label('Company')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('country.name')
                                     ->label('Country'),
 
-                                TextEntry::make('city')
-                                    ->label('City'),
+                                TextEntry::make('zone.name')
+                                    ->label('Zone')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('city.name')
+                                    ->label('City')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('address_line_1')
                                     ->label('Address Line 1'),
 
                                 TextEntry::make('address_line_2')
-                                    ->label('Address Line 2'),
+                                    ->label('Address Line 2')
+                                    ->placeholder('—'),
 
                                 TextEntry::make('postcode')
                                     ->label('Postcode'),
@@ -151,4 +176,3 @@ class ViewOrder extends ViewRecord
             ]);
     }
 }
-
