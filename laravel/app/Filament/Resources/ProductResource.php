@@ -5,12 +5,12 @@ namespace App\Filament\Resources;
 use App\Domains\Category\Models\Category;
 use App\Domains\Language\Models\Language;
 use App\Domains\Product\Models\Product;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use App\Filament\Resources\Product\Pages\CreateProduct;
 use App\Filament\Resources\Product\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages\ListProducts;
 use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -23,6 +23,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 
@@ -40,7 +41,7 @@ class ProductResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $languages   = Language::orderByDesc('is_default')->orderBy('name')->get();
+        $languages = Language::orderByDesc('is_default')->orderBy('name')->get();
         $defaultCode = $languages->firstWhere('is_default', true)?->code ?? config('app.locale', 'en');
 
         $translationTabs = $languages->map(function (Language $language) use ($defaultCode): Tabs\Tab {
@@ -52,8 +53,8 @@ class ProductResource extends Resource
                         ->maxLength(255)
                         ->live(onBlur: true)
                         ->afterStateUpdated(function (Get $get, Set $set, mixed $old, mixed $state) use ($language, $defaultCode): void {
-                            $oldStr      = is_string($old) ? $old : '';
-                            $stateStr    = is_string($state) ? $state : '';
+                            $oldStr = is_string($old) ? $old : '';
+                            $stateStr = is_string($state) ? $state : '';
                             $currentSlug = $get("slug_{$language->code}") ?? '';
                             if ($currentSlug === '' || $currentSlug === Str::slug($oldStr)) {
                                 $set("slug_{$language->code}", Str::slug($stateStr));
@@ -143,7 +144,29 @@ class ProductResource extends Resource
                     Forms\Components\Repeater::make('variants')
                         ->relationship('variants')
                         ->label('')
+                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data) use ($languages): array {
+                            return static::packVariantNameTranslations($data, $languages);
+                        })
+                        ->mutateRelationshipDataBeforeSaveUsing(function (array $data) use ($languages): array {
+                            return static::packVariantNameTranslations($data, $languages);
+                        })
+                        ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($languages): array {
+                            return static::unpackVariantNameTranslations($data, $languages);
+                        })
                         ->schema([
+                            Tabs::make('VariantTranslations')
+                                ->tabs(
+                                    $languages->map(function (Language $language): Tabs\Tab {
+                                        return Tabs\Tab::make($language->name)
+                                            ->schema([
+                                                Forms\Components\TextInput::make("name_{$language->code}")
+                                                    ->label('Name')
+                                                    ->required($language->is_default),
+                                            ]);
+                                    })->toArray()
+                                )
+                                ->columnSpanFull(),
+
                             Forms\Components\TextInput::make('sku')
                                 ->label('SKU')
                                 ->required()
@@ -269,9 +292,67 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListProducts::route('/'),
+            'index' => ListProducts::route('/'),
             'create' => CreateProduct::route('/create'),
-            'edit'   => EditProduct::route('/{record}/edit'),
+            'edit' => EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    // ── Variant name translation helpers ─────────────────────────────────
+
+    /**
+     * Pack per-locale flat keys (name_en, name_fr, …) in a variant row into
+     * a single `name` JSON translation array for Spatie HasTranslations.
+     * Called by the Repeater's mutateRelationshipDataBeforeCreate/Save hooks.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  Collection<int, Language>  $languages
+     * @return array<string, mixed>
+     */
+    protected static function packVariantNameTranslations(array $data, Collection $languages): array
+    {
+        $name = [];
+
+        foreach ($languages as $language) {
+            $code = $language->code;
+            $value = $data["name_{$code}"] ?? null;
+
+            if ($value !== null && $value !== '') {
+                $name[$code] = $value;
+            }
+
+            unset($data["name_{$code}"]);
+        }
+
+        $data['name'] = $name;
+
+        return $data;
+    }
+
+    /**
+     * Unpack a variant's `name` JSON translation array into per-locale flat
+     * keys (name_en, name_fr, …) so the Repeater's tab inputs populate.
+     * Called by the Repeater's mutateRelationshipDataBeforeFill hook.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  Collection<int, Language>  $languages
+     * @return array<string, mixed>
+     */
+    protected static function unpackVariantNameTranslations(array $data, Collection $languages): array
+    {
+        $nameTranslations = $data['name'] ?? [];
+
+        if (is_string($nameTranslations)) {
+            $nameTranslations = json_decode($nameTranslations, true) ?? [];
+        }
+
+        foreach ($languages as $language) {
+            $code = $language->code;
+            $data["name_{$code}"] = $nameTranslations[$code] ?? null;
+        }
+
+        unset($data['name']);
+
+        return $data;
     }
 }

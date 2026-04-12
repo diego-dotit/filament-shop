@@ -7,9 +7,9 @@ use App\Domains\Language\Models\Language;
 use App\Domains\Manufacturer\Models\Manufacturer;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Filament\Resources\ProductResource;
 use App\Filament\Resources\Product\Pages\CreateProduct;
 use App\Filament\Resources\Product\Pages\EditProduct;
+use App\Filament\Resources\ProductResource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -58,17 +58,18 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'   => 'Test Product',
-                'slug'      => 'test-product',
+                'name_en' => 'Test Product',
+                'slug' => 'test-product',
                 'is_active' => true,
-                'variants'  => [
+                'variants' => [
                     [
-                        'sku'            => 'SKU-001',
-                        'regular_price'  => 29.99,
-                        'special_price'  => null,
+                        'name_en' => 'Default Variant',
+                        'sku' => 'SKU-001',
+                        'regular_price' => 29.99,
+                        'special_price' => null,
                         'stock_quantity' => 10,
-                        'weight'         => 0.5,
-                        'is_active'      => true,
+                        'weight' => 0.5,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -76,7 +77,7 @@ class ProductResourceTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('products', [
-            'slug'      => 'test-product',
+            'slug' => 'test-product',
             'is_active' => true,
         ]);
 
@@ -84,7 +85,7 @@ class ProductResourceTest extends TestCase
         $this->assertNotNull($product);
         $this->assertDatabaseHas('product_variants', [
             'product_id' => $product->id,
-            'sku'        => 'SKU-001',
+            'sku' => 'SKU-001',
         ]);
     }
 
@@ -94,15 +95,15 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'  => '',
-                'slug'     => 'some-slug',
+                'name_en' => '',
+                'slug' => 'some-slug',
                 'variants' => [
                     [
-                        'sku'            => 'SKU-002',
-                        'regular_price'  => 10.00,
+                        'sku' => 'SKU-002',
+                        'regular_price' => 10.00,
                         'stock_quantity' => 1,
-                        'weight'         => 0.5,
-                        'is_active'      => true,
+                        'weight' => 0.5,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -119,15 +120,15 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'  => 'Another Product',
-                'slug_en'  => 'existing-slug',
+                'name_en' => 'Another Product',
+                'slug_en' => 'existing-slug',
                 'variants' => [
                     [
-                        'sku'            => 'SKU-003',
-                        'regular_price'  => 15.00,
+                        'sku' => 'SKU-003',
+                        'regular_price' => 15.00,
                         'stock_quantity' => 5,
-                        'weight'         => 1.0,
-                        'is_active'      => true,
+                        'weight' => 1.0,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -142,15 +143,15 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'  => 'Product With Duplicate SKU',
-                'slug'     => 'product-with-duplicate-sku',
+                'name_en' => 'Product With Duplicate SKU',
+                'slug' => 'product-with-duplicate-sku',
                 'variants' => [
                     [
-                        'sku'            => 'DUPLICATE-SKU',
-                        'regular_price'  => 20.00,
+                        'sku' => 'DUPLICATE-SKU',
+                        'regular_price' => 20.00,
                         'stock_quantity' => 3,
-                        'weight'         => 0.3,
-                        'is_active'      => true,
+                        'weight' => 0.3,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -163,14 +164,14 @@ class ProductResourceTest extends TestCase
     public function test_edit_product_page_renders_with_existing_data(): void
     {
         $product = Product::factory()->create([
-            'name'      => ['en' => 'Editable Product'],
-            'slug'      => 'editable-product',
+            'name' => ['en' => 'Editable Product'],
+            'slug' => 'editable-product',
             'is_active' => true,
         ]);
         ProductVariant::factory()->create([
             'product_id' => $product->id,
-            'sku'        => 'SKU-EDIT-001',
-            'is_active'  => true,
+            'sku' => 'SKU-EDIT-001',
+            'is_active' => true,
         ]);
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
@@ -183,30 +184,31 @@ class ProductResourceTest extends TestCase
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
         $product = Product::factory()->create([
-            'name'      => ['en' => 'Original Product'],
-            'slug'      => 'original-product',
+            'name' => ['en' => 'Original Product'],
+            'slug' => 'original-product',
             'is_active' => true,
         ]);
         ProductVariant::factory()->create([
-            'product_id'    => $product->id,
-            'sku'           => 'SKU-ORIGINAL',
+            'product_id' => $product->id,
+            'name' => ['en' => 'Original Variant'],
+            'sku' => 'SKU-ORIGINAL',
             'regular_price' => 10.00,
-            'is_active'     => true,
+            'is_active' => true,
         ]);
 
         // Only update product-level fields; variants are loaded from relationship
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->fillForm([
-                'name_en'   => 'Updated Product',
-                'slug_en'   => 'original-product',
+                'name_en' => 'Updated Product',
+                'slug_en' => 'original-product',
                 'is_active' => true,
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('products', [
-            'id'        => $product->id,
-            'slug'      => 'original-product',
+            'id' => $product->id,
+            'slug' => 'original-product',
             'is_active' => true,
         ]);
     }
@@ -218,7 +220,7 @@ class ProductResourceTest extends TestCase
         ]);
         ProductVariant::factory()->create([
             'product_id' => $product->id,
-            'is_active'  => true,
+            'is_active' => true,
         ]);
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
@@ -262,19 +264,20 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'         => 'English Product',
-                'name_de'         => 'Deutsches Produkt',
-                'description_en'  => 'English description',
-                'description_de'  => 'Deutsche Beschreibung',
-                'slug'            => 'english-product',
-                'is_active'       => true,
-                'variants'        => [
+                'name_en' => 'English Product',
+                'name_de' => 'Deutsches Produkt',
+                'description_en' => 'English description',
+                'description_de' => 'Deutsche Beschreibung',
+                'slug' => 'english-product',
+                'is_active' => true,
+                'variants' => [
                     [
-                        'sku'            => 'SKU-TRANS-001',
-                        'regular_price'  => 19.99,
+                        'name_en' => 'Translation Variant',
+                        'sku' => 'SKU-TRANS-001',
+                        'regular_price' => 19.99,
                         'stock_quantity' => 5,
-                        'weight'         => 0.3,
-                        'is_active'      => true,
+                        'weight' => 0.3,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -298,7 +301,7 @@ class ProductResourceTest extends TestCase
             ->fillForm([
                 'name_en' => '',
                 'name_de' => 'Deutsches Produkt',
-                'slug'    => 'some-product',
+                'slug' => 'some-product',
             ])
             ->call('create')
             ->assertHasFormErrors(['name_en']);
@@ -311,17 +314,17 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'  => 'English Only Product',
-                'name_de'  => '',
-                'slug'     => 'english-only-product',
+                'name_en' => 'English Only Product',
+                'name_de' => '',
+                'slug' => 'english-only-product',
                 'is_active' => true,
                 'variants' => [
                     [
-                        'sku'            => 'SKU-OPTIONAL-001',
-                        'regular_price'  => 9.99,
+                        'sku' => 'SKU-OPTIONAL-001',
+                        'regular_price' => 9.99,
                         'stock_quantity' => 2,
-                        'weight'         => 0.2,
-                        'is_active'      => true,
+                        'weight' => 0.2,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -335,15 +338,15 @@ class ProductResourceTest extends TestCase
         Language::factory()->create(['code' => 'de', 'name' => 'German', 'is_default' => false]);
 
         $product = Product::factory()->create([
-            'name'        => ['en' => 'English Product', 'de' => 'Deutsches Produkt'],
+            'name' => ['en' => 'English Product', 'de' => 'Deutsches Produkt'],
             'description' => ['en' => 'English desc', 'de' => 'Deutsche Beschr.'],
-            'slug'        => 'english-product',
+            'slug' => 'english-product',
         ]);
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->assertFormSet([
-                'name_en'        => 'English Product',
-                'name_de'        => 'Deutsches Produkt',
+                'name_en' => 'English Product',
+                'name_de' => 'Deutsches Produkt',
                 'description_en' => 'English desc',
                 'description_de' => 'Deutsche Beschr.',
             ]);
@@ -355,19 +358,19 @@ class ProductResourceTest extends TestCase
         Language::factory()->create(['code' => 'fr', 'name' => 'French', 'is_default' => false]);
 
         $product = Product::factory()->create([
-            'name'        => ['en' => 'Original English', 'fr' => 'Original French'],
+            'name' => ['en' => 'Original English', 'fr' => 'Original French'],
             'description' => ['en' => 'Desc EN', 'fr' => 'Desc FR'],
-            'slug'        => 'trans-test-product',
+            'slug' => 'trans-test-product',
         ]);
-        ProductVariant::factory()->create(['product_id' => $product->id, 'is_active' => true]);
+        ProductVariant::factory()->create(['product_id' => $product->id, 'name' => ['en' => 'Test Variant', 'fr' => 'Variante Test'], 'is_active' => true]);
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->fillForm([
-                'name_en'        => 'Updated English',
-                'name_fr'        => 'Updated French',
+                'name_en' => 'Updated English',
+                'name_fr' => 'Updated French',
                 'description_en' => 'Updated Desc EN',
                 'description_fr' => 'Updated Desc FR',
-                'slug'           => 'trans-test-product',
+                'slug' => 'trans-test-product',
             ])
             ->call('save')
             ->assertHasNoFormErrors();
@@ -401,24 +404,25 @@ class ProductResourceTest extends TestCase
     {
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
-        $category1    = Category::factory()->create(['name' => ['en' => 'Electronics'], 'slug' => 'electronics', 'is_active' => true]);
-        $category2    = Category::factory()->create(['name' => ['en' => 'Gadgets'], 'slug' => 'gadgets', 'is_active' => true]);
+        $category1 = Category::factory()->create(['name' => ['en' => 'Electronics'], 'slug' => 'electronics', 'is_active' => true]);
+        $category2 = Category::factory()->create(['name' => ['en' => 'Gadgets'], 'slug' => 'gadgets', 'is_active' => true]);
         $manufacturer = Manufacturer::factory()->create(['name' => 'Acme Corp', 'slug' => 'acme-corp']);
 
         Livewire::test(CreateProduct::class)
             ->fillForm([
-                'name_en'       => 'Categorised Product',
-                'slug'          => 'categorised-product',
-                'is_active'     => true,
-                'categories'    => [$category1->id, $category2->id],
+                'name_en' => 'Categorised Product',
+                'slug' => 'categorised-product',
+                'is_active' => true,
+                'categories' => [$category1->id, $category2->id],
                 'manufacturers' => [$manufacturer->id],
-                'variants'      => [
+                'variants' => [
                     [
-                        'sku'            => 'SKU-CAT-001',
-                        'regular_price'  => 49.99,
+                        'name_en' => 'Categorised Variant',
+                        'sku' => 'SKU-CAT-001',
+                        'regular_price' => 49.99,
                         'stock_quantity' => 5,
-                        'weight'         => 0.5,
-                        'is_active'      => true,
+                        'weight' => 0.5,
+                        'is_active' => true,
                     ],
                 ],
             ])
@@ -429,15 +433,15 @@ class ProductResourceTest extends TestCase
         $this->assertNotNull($product);
 
         $this->assertDatabaseHas('category_product', [
-            'product_id'  => $product->id,
+            'product_id' => $product->id,
             'category_id' => $category1->id,
         ]);
         $this->assertDatabaseHas('category_product', [
-            'product_id'  => $product->id,
+            'product_id' => $product->id,
             'category_id' => $category2->id,
         ]);
         $this->assertDatabaseHas('product_manufacturer', [
-            'product_id'      => $product->id,
+            'product_id' => $product->id,
             'manufacturer_id' => $manufacturer->id,
         ]);
     }
@@ -446,12 +450,12 @@ class ProductResourceTest extends TestCase
     {
         Language::factory()->create(['code' => 'en', 'name' => 'English', 'is_default' => true]);
 
-        $category     = Category::factory()->create(['name' => ['en' => 'Tools'], 'slug' => 'tools', 'is_active' => true]);
+        $category = Category::factory()->create(['name' => ['en' => 'Tools'], 'slug' => 'tools', 'is_active' => true]);
         $manufacturer = Manufacturer::factory()->create(['name' => 'ToolCo', 'slug' => 'toolco']);
 
         $product = Product::factory()->create([
-            'name'      => ['en' => 'Tool Product'],
-            'slug'      => 'tool-product',
+            'name' => ['en' => 'Tool Product'],
+            'slug' => 'tool-product',
             'is_active' => true,
         ]);
         $product->categories()->attach($category->id);
@@ -459,7 +463,7 @@ class ProductResourceTest extends TestCase
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->assertFormSet([
-                'categories'    => [$category->id],
+                'categories' => [$category->id],
                 'manufacturers' => [$manufacturer->id],
             ]);
     }
@@ -472,11 +476,11 @@ class ProductResourceTest extends TestCase
         $categoryNew = Category::factory()->create(['name' => ['en' => 'New Cat'], 'slug' => 'new-cat', 'is_active' => true]);
 
         $product = Product::factory()->create([
-            'name'      => ['en' => 'Editable Cat Product'],
-            'slug'      => 'editable-cat-product',
+            'name' => ['en' => 'Editable Cat Product'],
+            'slug' => 'editable-cat-product',
             'is_active' => true,
         ]);
-        ProductVariant::factory()->create(['product_id' => $product->id, 'is_active' => true]);
+        ProductVariant::factory()->create(['product_id' => $product->id, 'name' => ['en' => 'Cat Variant'], 'is_active' => true]);
         $product->categories()->attach($categoryOld->id);
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
@@ -490,7 +494,7 @@ class ProductResourceTest extends TestCase
         $this->assertCount(1, $product->categories);
         $this->assertEquals($categoryNew->id, $product->categories->first()->id);
         $this->assertDatabaseMissing('category_product', [
-            'product_id'  => $product->id,
+            'product_id' => $product->id,
             'category_id' => $categoryOld->id,
         ]);
     }

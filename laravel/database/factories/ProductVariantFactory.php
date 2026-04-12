@@ -18,13 +18,14 @@ class ProductVariantFactory extends Factory
         $regularPrice = fake()->randomFloat(2, 5, 500);
 
         return [
-            'product_id'     => fn () => Product::factory(),
-            'sku'            => strtoupper(fake()->unique()->bothify('SKU-####-???')),
-            'regular_price'  => $regularPrice,
-            'special_price'  => fake()->optional(0.5)->randomFloat(2, 1, $regularPrice - 0.01),
+            'product_id' => fn () => Product::factory(),
+            'sku' => strtoupper(fake()->unique()->bothify('SKU-####-???')),
+            'name' => ['en' => fake()->words(3, true)],
+            'regular_price' => $regularPrice,
+            'special_price' => fake()->optional(0.5)->randomFloat(2, 1, $regularPrice - 0.01),
             'stock_quantity' => fake()->numberBetween(0, 200),
-            'weight'         => fake()->randomFloat(3, 0.1, 20),
-            'is_active'      => fake()->boolean(70),
+            'weight' => fake()->randomFloat(3, 0.1, 20),
+            'is_active' => fake()->boolean(70),
         ];
     }
 
