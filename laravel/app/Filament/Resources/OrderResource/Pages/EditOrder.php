@@ -24,6 +24,8 @@ class EditOrder extends EditRecord
     /** @var array<int, array<string, mixed>> */
     private array $pendingTotals = [];
 
+    protected ?string $originalStatus = null;
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $this->record->load('items', 'addresses', 'totals');
@@ -112,6 +114,8 @@ class EditOrder extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $this->originalStatus = $this->record->status;
+
         $sameAsBilling = (bool) ($data['same_as_billing'] ?? false);
 
         $this->pendingItems = $data['items'] ?? [];
@@ -185,6 +189,10 @@ class EditOrder extends EditRecord
                 'value' => 0,
                 'sort_order' => $maxSortOrder > 0 ? $maxSortOrder + 1 : 999,
             ]);
+        }
+
+        if ($this->originalStatus !== $this->record->status) {
+            $this->record->createHistoryEntry($this->record->status, null);
         }
     }
 

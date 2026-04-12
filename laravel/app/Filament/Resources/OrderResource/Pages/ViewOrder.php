@@ -5,6 +5,7 @@ namespace App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource;
 use Filament\Actions;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -33,10 +34,15 @@ class ViewOrder extends ViewRecord
                             'cancelled' => 'Cancelled',
                         ])
                         ->required(),
+                    Textarea::make('comments')
+                        ->label('Comments')
+                        ->placeholder('Enter any comments about this status change (optional)')
+                        ->nullable(),
                 ])
                 ->fillForm(fn ($record) => ['status' => $record->status])
                 ->action(function ($record, array $data): void {
                     $record->update(['status' => $data['status']]);
+                    $record->createHistoryEntry($data['status'], $data['comments'] ?: null);
 
                     Notification::make()
                         ->title('Status updated')
@@ -45,6 +51,11 @@ class ViewOrder extends ViewRecord
                 })
                 ->after(fn () => $this->refreshFormData(['status'])),
         ];
+    }
+
+    protected function resolveRecord(int | string $key): \App\Domains\Order\Models\Order
+    {
+        return parent::resolveRecord($key)->load('history');
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -170,6 +181,24 @@ class ViewOrder extends ViewRecord
 
                                 TextEntry::make('postcode')
                                     ->label('Postcode'),
+                            ])
+                            ->columns(3),
+                    ]),
+
+                Section::make('Order History')
+                    ->schema([
+                        RepeatableEntry::make('history')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge(),
+                                TextEntry::make('comments')
+                                    ->label('Comments')
+                                    ->placeholder('—'),
+                                TextEntry::make('created_at')
+                                    ->label('Date')
+                                    ->dateTime(),
                             ])
                             ->columns(3),
                     ]),

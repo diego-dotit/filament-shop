@@ -106,6 +106,8 @@ class CreateOrder extends CreateRecord
                 'sort_order' => $maxSortOrder > 0 ? $maxSortOrder + 1 : 999,
             ]);
         }
+
+        $this->record->createHistoryEntry($this->record->status, null, $this->record->created_at);
     }
 
     protected function getRedirectUrl(): string
