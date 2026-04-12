@@ -18,6 +18,9 @@ class CreateOrder extends CreateRecord
     /** @var array<int, array<string, mixed>> */
     private array $pendingShippingAddresses = [];
 
+    /** @var array<int, array<string, mixed>> */
+    private array $pendingTotals = [];
+
     /**
      * Strip items and addresses arrays from form data before Order::create() is called,
      * storing them for later persistence in afterCreate().
@@ -59,8 +62,9 @@ class CreateOrder extends CreateRecord
         $this->pendingItems = $data['items'] ?? [];
         $this->pendingBillingAddresses = $data['billing_addresses'] ?? [];
         $this->pendingShippingAddresses = $data['shipping_addresses'] ?? [];
+        $this->pendingTotals = $data['order_totals'] ?? [];
 
-        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses']);
+        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses'], $data['order_totals']);
 
         return $data;
     }
@@ -81,6 +85,26 @@ class CreateOrder extends CreateRecord
 
         foreach ($this->pendingShippingAddresses as $address) {
             $this->record->addresses()->create([...$address]);
+        }
+
+        foreach ($this->pendingTotals as $index => $item) {
+            $item['sort_order'] = $index + 1;
+            $this->record->totals()->create($item);
+        }
+
+        $maxSortOrder = $this->record->totals()->where('code', '!=', 'total')->max('sort_order') ?? 0;
+
+        $systemTotal = $this->record->totals()->where('code', 'total')->first();
+
+        if ($systemTotal) {
+            $systemTotal->update(['sort_order' => $maxSortOrder + 1]);
+        } else {
+            $this->record->totals()->create([
+                'name' => 'Total',
+                'code' => 'total',
+                'value' => 0,
+                'sort_order' => $maxSortOrder > 0 ? $maxSortOrder + 1 : 999,
+            ]);
         }
     }
 

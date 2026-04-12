@@ -399,6 +399,53 @@ class OrderResource extends Resource
 
                         return number_format($subtotal, 2);
                     }),
+
+                Forms\Components\Section::make('Order Totals')
+                    ->schema([
+                        Forms\Components\Repeater::make('order_totals')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Name')
+                                    ->required()
+                                    ->maxLength(100),
+
+                                Forms\Components\TextInput::make('code')
+                                    ->label('Code')
+                                    ->required()
+                                    ->maxLength(50)
+                                    ->rules([
+                                        static function (string $attribute, mixed $value, \Closure $fail): void {
+                                            if (strtolower((string) $value) === 'total') {
+                                                $fail("The code 'total' is reserved and cannot be used manually.");
+                                            }
+                                        },
+                                    ]),
+
+                                Forms\Components\TextInput::make('value')
+                                    ->label('Value')
+                                    ->numeric()
+                                    ->step('0.01')
+                                    ->required()
+                                    ->live(onBlur: true),
+                            ])
+                            ->columns(4)
+                            ->addActionLabel('Add Total')
+                            ->collapsible()
+                            ->reorderable(false)
+                            ->minItems(0),
+                    ]),
+
+                Placeholder::make('total_display')
+                    ->label('Total')
+                    ->content(function (Get $get): string {
+                        $items = $get('items') ?? [];
+                        $subtotal = collect($items)->sum(fn (array $row): float => ((float) ($row['quantity'] ?? 0)) * ((float) ($row['unit_price_snapshot'] ?? 0)));
+
+                        $totals = $get('order_totals') ?? [];
+                        $orderTotalsSum = collect($totals)->filter(fn ($row) => ($row['code'] ?? '') !== 'total')->sum(fn ($row) => (float) ($row['value'] ?? 0));
+
+                        return number_format($subtotal + $orderTotalsSum, 2);
+                    }),
             ]);
     }
 

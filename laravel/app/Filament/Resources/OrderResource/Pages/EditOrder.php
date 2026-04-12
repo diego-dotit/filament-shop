@@ -4,6 +4,7 @@ namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Domains\Order\Models\OrderAddress;
 use App\Domains\Order\Models\OrderItem;
+use App\Domains\Order\Models\OrderTotal;
 use App\Filament\Resources\OrderResource;
 use Filament\Resources\Pages\EditRecord;
 
@@ -20,9 +21,12 @@ class EditOrder extends EditRecord
     /** @var array<int, array<string, mixed>> */
     private array $pendingShippingAddresses = [];
 
+    /** @var array<int, array<string, mixed>> */
+    private array $pendingTotals = [];
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $this->record->load('items', 'addresses');
+        $this->record->load('items', 'addresses', 'totals');
 
         $data['items'] = $this->record->items
             ->map(fn (OrderItem $item) => $item->only([
@@ -66,6 +70,13 @@ class EditOrder extends EditRecord
             $data['shipping_addresses'][0] ?? []
         );
 
+        $data['order_totals'] = $this->record->totals
+            ->where('code', '!=', 'total')
+            ->sortBy('sort_order')
+            ->values()
+            ->map(fn (OrderTotal $total) => $total->only(['name', 'code', 'value', 'sort_order']))
+            ->toArray();
+
         return $data;
     }
 
@@ -106,6 +117,7 @@ class EditOrder extends EditRecord
         $this->pendingItems = $data['items'] ?? [];
         $this->pendingBillingAddresses = $data['billing_addresses'] ?? [];
         $this->pendingShippingAddresses = $data['shipping_addresses'] ?? [];
+        $this->pendingTotals = $data['order_totals'] ?? [];
 
         if ($sameAsBilling && ! empty($this->pendingBillingAddresses[0])) {
             $copyFields = [
@@ -134,7 +146,7 @@ class EditOrder extends EditRecord
             $this->pendingShippingAddresses[0] = $shippingBase;
         }
 
-        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses'], $data['same_as_billing']);
+        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses'], $data['same_as_billing'], $data['order_totals']);
 
         return $data;
     }
@@ -152,6 +164,27 @@ class EditOrder extends EditRecord
         }
         foreach ($this->pendingShippingAddresses as $address) {
             $this->record->addresses()->create($address);
+        }
+
+        $this->record->totals()->where('code', '!=', 'total')->delete();
+        foreach ($this->pendingTotals as $index => $item) {
+            $item['sort_order'] = $index + 1;
+            $this->record->totals()->create($item);
+        }
+
+        $maxSortOrder = $this->record->totals()->where('code', '!=', 'total')->max('sort_order') ?? 0;
+
+        $systemTotal = $this->record->totals()->where('code', 'total')->first();
+
+        if ($systemTotal) {
+            $systemTotal->update(['sort_order' => $maxSortOrder + 1]);
+        } else {
+            $this->record->totals()->create([
+                'name' => 'Total',
+                'code' => 'total',
+                'value' => 0,
+                'sort_order' => $maxSortOrder > 0 ? $maxSortOrder + 1 : 999,
+            ]);
         }
     }
 
