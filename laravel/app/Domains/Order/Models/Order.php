@@ -75,7 +75,7 @@ class Order extends Model
 
     public function history(): HasMany
     {
-        return $this->hasMany(OrderHistory::class)->orderBy('created_at', 'asc');
+        return $this->hasMany(OrderHistory::class)->latest('created_at');
     }
 
     // -----------------------------------------------------------------------
@@ -94,10 +94,14 @@ class Order extends Model
     {
         /** @var OrderHistory $entry */
         $entry = $this->history()->create([
-            'status'     => $status,
-            'comments'   => $comments,
-            'created_at' => $createdAt,
+            'status'   => $status,
+            'comments' => $comments,
         ]);
+
+        if ($createdAt !== null) {
+            $entry->created_at = $createdAt;
+            $entry->save();
+        }
 
         return $entry;
     }

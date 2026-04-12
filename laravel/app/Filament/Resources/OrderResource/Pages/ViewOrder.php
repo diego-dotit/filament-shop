@@ -55,7 +55,16 @@ class ViewOrder extends ViewRecord
 
     protected function resolveRecord(int | string $key): \App\Domains\Order\Models\Order
     {
-        return parent::resolveRecord($key)->load('history');
+        return parent::resolveRecord($key)->load([
+            'history' => fn ($q) => $q->latest('created_at'),
+            'items',
+            'billingAddress.country',
+            'billingAddress.zone',
+            'billingAddress.city',
+            'shippingAddress.country',
+            'shippingAddress.zone',
+            'shippingAddress.city',
+        ]);
     }
 
     public function infolist(Infolist $infolist): Infolist
