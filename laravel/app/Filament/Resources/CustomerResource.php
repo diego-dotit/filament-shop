@@ -8,6 +8,7 @@ use App\Domains\Localisation\Models\Country;
 use App\Domains\Localisation\Models\Zone;
 use App\Filament\Resources\CustomerResource\Pages;
 use App\Filament\Resources\CustomerResource\RelationManagers\AddressesRelationManager;
+use App\Filament\Resources\CustomerResource\RelationManagers\OrdersRelationManager;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -191,6 +192,7 @@ class CustomerResource extends Resource
     {
         return [
             AddressesRelationManager::class,
+            OrdersRelationManager::class,
         ];
     }
 
