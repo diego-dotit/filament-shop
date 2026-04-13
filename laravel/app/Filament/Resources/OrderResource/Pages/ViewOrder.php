@@ -2,7 +2,12 @@
 
 namespace App\Filament\Resources\OrderResource\Pages;
 
+use App\Domains\Order\Models\Order;
+use App\Domains\Order\Models\OrderItem;
+use App\Domains\Order\Models\OrderTotal;
+use App\Filament\Resources\CustomerResource;
 use App\Filament\Resources\OrderResource;
+use App\Filament\Resources\ProductResource;
 use Filament\Actions;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -53,11 +58,12 @@ class ViewOrder extends ViewRecord
         ];
     }
 
-    protected function resolveRecord(int | string $key): \App\Domains\Order\Models\Order
+    protected function resolveRecord(int|string $key): Order
     {
         return parent::resolveRecord($key)->load([
             'history' => fn ($q) => $q->latest('created_at'),
-            'items',
+            'items.product',
+            'totals',
             'billingAddress.country',
             'billingAddress.zone',
             'billingAddress.city',
@@ -76,12 +82,32 @@ class ViewOrder extends ViewRecord
                         TextEntry::make('id')
                             ->label('Order ID'),
 
-                        TextEntry::make('customer.first_name')
-                            ->label('Customer Name'),
+                        TextEntry::make('firstname')
+                            ->label('Customer Name')
+                            ->formatStateUsing(
+                                fn ($state, Order $record): string => trim(($record->firstname ?? '').' '.($record->lastname ?? '')) ?: 'N/A'
+                            )
+                            ->url(
+                                fn ($state, Order $record): ?string => $record->customer_id
+                                    ? CustomerResource::getUrl('view', ['record' => $record->customer_id])
+                                    : null
+                            ),
 
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge(),
+
+                        TextEntry::make('firstname')
+                            ->label('First Name'),
+
+                        TextEntry::make('lastname')
+                            ->label('Last Name'),
+
+                        TextEntry::make('email')
+                            ->label('Email'),
+
+                        TextEntry::make('telephone')
+                            ->label('Telephone'),
 
                         TextEntry::make('total_amount')
                             ->label('Total Amount')
@@ -91,27 +117,49 @@ class ViewOrder extends ViewRecord
                     ])
                     ->columns(2),
 
-                Section::make('Order Items')
+                Section::make('Contents')
                     ->schema([
-                        RepeatableEntry::make('items')
+                        RepeatableEntry::make('contents')
                             ->label('')
                             ->schema([
                                 TextEntry::make('product_name_snapshot')
-                                    ->label('Product'),
+                                    ->label('Product')
+                                    ->url(fn ($record) => $record instanceof OrderItem && $record->product_id && $record->product
+                                        ? ProductResource::getUrl('edit', ['record' => $record->product_id])
+                                        : null)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn ($record) => $record instanceof OrderItem),
 
                                 TextEntry::make('variant_sku_snapshot')
-                                    ->label('SKU'),
+                                    ->label('SKU')
+                                    ->visible(fn ($record) => $record instanceof OrderItem),
 
                                 TextEntry::make('unit_price_snapshot')
                                     ->label('Unit Price')
-                                    ->numeric(decimalPlaces: 2),
+                                    ->numeric(decimalPlaces: 2)
+                                    ->visible(fn ($record) => $record instanceof OrderItem),
 
                                 TextEntry::make('quantity')
-                                    ->label('Qty'),
+                                    ->label('Qty')
+                                    ->visible(fn ($record) => $record instanceof OrderItem),
 
                                 TextEntry::make('line_total_snapshot')
                                     ->label('Line Total')
-                                    ->numeric(decimalPlaces: 2),
+                                    ->numeric(decimalPlaces: 2)
+                                    ->visible(fn ($record) => $record instanceof OrderItem),
+
+                                TextEntry::make('name')
+                                    ->label('Total Name')
+                                    ->visible(fn ($record) => $record instanceof OrderTotal),
+
+                                TextEntry::make('code')
+                                    ->label('Code')
+                                    ->visible(fn ($record) => $record instanceof OrderTotal),
+
+                                TextEntry::make('value')
+                                    ->label('Value')
+                                    ->numeric(decimalPlaces: 2)
+                                    ->visible(fn ($record) => $record instanceof OrderTotal),
                             ])
                             ->columns(5),
                     ]),

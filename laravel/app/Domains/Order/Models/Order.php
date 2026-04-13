@@ -3,10 +3,12 @@
 namespace App\Domains\Order\Models;
 
 use App\Domains\Customer\Models\Customer;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Order extends Model
 {
@@ -17,6 +19,8 @@ class Order extends Model
      *
      * @var list<string>
      */
+    protected $appends = ['contents'];
+
     protected $fillable = [
         'customer_id',
         'status',
@@ -83,22 +87,34 @@ class Order extends Model
     }
 
     // -----------------------------------------------------------------------
+    // Accessors
+    // -----------------------------------------------------------------------
+
+    public function getContentsAttribute(): Collection
+    {
+        $items = $this->items ?? collect();
+        $totals = ($this->totals ?? collect())->sortBy('sort_order');
+
+        return collect($items)->merge($totals);
+    }
+
+    // -----------------------------------------------------------------------
     // Actions
     // -----------------------------------------------------------------------
 
     /**
      * Create and persist a new history entry for this order.
      *
-     * @param  string            $status     The status value to record.
-     * @param  string|null       $comments   Optional human-readable notes for the entry.
-     * @param  \Carbon\Carbon|null $createdAt Optional timestamp to use as created_at (e.g. order's own created_at).
-     * @return OrderHistory                   The newly created history record.
+     * @param  string  $status  The status value to record.
+     * @param  string|null  $comments  Optional human-readable notes for the entry.
+     * @param  Carbon|null  $createdAt  Optional timestamp to use as created_at (e.g. order's own created_at).
+     * @return OrderHistory The newly created history record.
      */
-    public function createHistoryEntry(string $status, ?string $comments = null, ?\Carbon\Carbon $createdAt = null): OrderHistory
+    public function createHistoryEntry(string $status, ?string $comments = null, ?Carbon $createdAt = null): OrderHistory
     {
         /** @var OrderHistory $entry */
         $entry = $this->history()->create([
-            'status'   => $status,
+            'status' => $status,
             'comments' => $comments,
         ]);
 
