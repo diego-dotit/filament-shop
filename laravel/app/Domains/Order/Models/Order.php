@@ -19,8 +19,6 @@ class Order extends Model
      *
      * @var list<string>
      */
-    protected $appends = ['contents'];
-
     protected $fillable = [
         'customer_id',
         'status',
