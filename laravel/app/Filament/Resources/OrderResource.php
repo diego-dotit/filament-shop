@@ -11,11 +11,11 @@ use App\Domains\Localisation\Models\Zone;
 use App\Domains\Order\Models\Order;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
-use App\Rules\ReservedOrderTotalCode;
 use App\Filament\Resources\OrderResource\Pages\CreateOrder;
 use App\Filament\Resources\OrderResource\Pages\EditOrder;
 use App\Filament\Resources\OrderResource\Pages\ListOrders;
 use App\Filament\Resources\OrderResource\Pages\ViewOrder;
+use App\Rules\ReservedOrderTotalCode;
 use Filament\Forms;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
@@ -24,6 +24,7 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -49,8 +50,25 @@ class OrderResource extends Resource
                     ->label('ID')
                     ->sortable(),
 
-                TextColumn::make('customer.first_name')
-                    ->label('Customer')
+                TextColumn::make('firstname')
+                    ->label('Customer Name')
+                    ->formatStateUsing(fn (Order $record): string => trim(($record->firstname ?? '').' '.($record->lastname ?? '')) ?: 'N/A')
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->where('firstname', 'like', "%{$search}%")
+                            ->orWhere('lastname', 'like', "%{$search}%");
+                    })
+                    ->sortable()
+                    ->url(fn (Order $record): ?string => $record->customer_id
+                        ? CustomerResource::getUrl('view', ['record' => $record->customer_id])
+                        : null),
+
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('telephone')
+                    ->label('Telephone')
                     ->searchable()
                     ->sortable(),
 
@@ -80,6 +98,26 @@ class OrderResource extends Resource
                         'completed' => 'Completed',
                         'cancelled' => 'Cancelled',
                     ]),
+
+                Filter::make('email')
+                    ->form([
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email'),
+                    ])
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['email'] ?? null,
+                        fn ($q, $v) => $q->where('email', 'like', "%{$v}%")
+                    )),
+
+                Filter::make('telephone')
+                    ->form([
+                        Forms\Components\TextInput::make('telephone')
+                            ->label('Telephone'),
+                    ])
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['telephone'] ?? null,
+                        fn ($q, $v) => $q->where('telephone', 'like', "%{$v}%")
+                    )),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -424,7 +462,7 @@ class OrderResource extends Resource
                                     ->label('Code')
                                     ->required()
                                     ->maxLength(50)
-                                    ->rules([new ReservedOrderTotalCode()]),
+                                    ->rules([new ReservedOrderTotalCode]),
 
                                 Forms\Components\TextInput::make('value')
                                     ->label('Value')
