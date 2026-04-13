@@ -24,6 +24,10 @@ class Order extends Model
         'currency_code',
         'language_code',
         'exchange_rate',
+        'firstname',
+        'lastname',
+        'email',
+        'telephone',
     ];
 
     /**

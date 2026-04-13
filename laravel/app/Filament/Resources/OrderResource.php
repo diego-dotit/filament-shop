@@ -11,6 +11,7 @@ use App\Domains\Localisation\Models\Zone;
 use App\Domains\Order\Models\Order;
 use App\Domains\Product\Models\Product;
 use App\Domains\Product\Models\ProductVariant;
+use App\Rules\ReservedOrderTotalCode;
 use App\Filament\Resources\OrderResource\Pages\CreateOrder;
 use App\Filament\Resources\OrderResource\Pages\EditOrder;
 use App\Filament\Resources\OrderResource\Pages\ListOrders;
@@ -413,13 +414,7 @@ class OrderResource extends Resource
                                     ->label('Code')
                                     ->required()
                                     ->maxLength(50)
-                                    ->rules([
-                                        static function (string $attribute, mixed $value, \Closure $fail): void {
-                                            if (strtolower((string) $value) === 'total') {
-                                                $fail("The code 'total' is reserved and cannot be used manually.");
-                                            }
-                                        },
-                                    ]),
+                                    ->rules([new ReservedOrderTotalCode()]),
 
                                 Forms\Components\TextInput::make('value')
                                     ->label('Value')
