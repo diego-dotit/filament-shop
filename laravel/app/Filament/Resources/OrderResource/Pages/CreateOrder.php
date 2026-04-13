@@ -25,6 +25,7 @@ class CreateOrder extends CreateRecord
      * Strip items and addresses arrays from form data before Order::create() is called,
      * storing them for later persistence in afterCreate().
      *
+     * Reads flat billing_* and shipping_* keys (no nested repeater arrays).
      * When the 'same_as_billing' switch is ON, billing address fields are copied to the
      * shipping address record (preserving shipping=1).
      *
@@ -34,37 +35,59 @@ class CreateOrder extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $sameAsBilling = $data['same_as_billing'] ?? false;
-        unset($data['same_as_billing']);
 
-        if ($sameAsBilling && ! empty($data['billing_addresses'][0])) {
-            $billingFields = array_intersect_key($data['billing_addresses'][0], array_flip([
-                'firstname',
-                'lastname',
-                'business',
-                'company',
-                'company_id',
-                'tax_id',
-                'country_id',
-                'zone_id',
-                'city_id',
-                'address_line_1',
-                'address_line_2',
-                'postcode',
-            ]));
+        // Build billing address from flat billing_* keys
+        $this->pendingBillingAddresses = [[
+            'firstname'      => $data['billing_firstname'] ?? null,
+            'lastname'       => $data['billing_lastname'] ?? null,
+            'business'       => $data['billing_business'] ?? false,
+            'company'        => $data['billing_company'] ?? null,
+            'company_id'     => $data['billing_company_id'] ?? null,
+            'tax_id'         => $data['billing_tax_id'] ?? null,
+            'country_id'     => $data['billing_country_id'] ?? null,
+            'zone_id'        => $data['billing_zone_id'] ?? null,
+            'city_id'        => $data['billing_city_id'] ?? null,
+            'address_line_1' => $data['billing_address_line_1'] ?? null,
+            'address_line_2' => $data['billing_address_line_2'] ?? null,
+            'postcode'       => $data['billing_postcode'] ?? null,
+            'shipping'       => 0,
+        ]];
 
-            $data['shipping_addresses'][0] = array_merge(
-                $data['shipping_addresses'][0] ?? [],
-                $billingFields,
-                ['shipping' => 1],
-            );
+        // Build shipping address — copy from billing when same_as_billing is set,
+        // otherwise read flat shipping_* keys
+        if ($sameAsBilling) {
+            $shippingAddress            = $this->pendingBillingAddresses[0];
+            $shippingAddress['shipping'] = 1;
+            $this->pendingShippingAddresses = [$shippingAddress];
+        } else {
+            $this->pendingShippingAddresses = [[
+                'firstname'      => $data['shipping_firstname'] ?? null,
+                'lastname'       => $data['shipping_lastname'] ?? null,
+                'business'       => $data['shipping_business'] ?? false,
+                'company'        => $data['shipping_company'] ?? null,
+                'company_id'     => $data['shipping_company_id'] ?? null,
+                'tax_id'         => $data['shipping_tax_id'] ?? null,
+                'country_id'     => $data['shipping_country_id'] ?? null,
+                'zone_id'        => $data['shipping_zone_id'] ?? null,
+                'city_id'        => $data['shipping_city_id'] ?? null,
+                'address_line_1' => $data['shipping_address_line_1'] ?? null,
+                'address_line_2' => $data['shipping_address_line_2'] ?? null,
+                'postcode'       => $data['shipping_postcode'] ?? null,
+                'shipping'       => 1,
+            ]];
         }
 
-        $this->pendingItems = $data['items'] ?? [];
-        $this->pendingBillingAddresses = $data['billing_addresses'] ?? [];
-        $this->pendingShippingAddresses = $data['shipping_addresses'] ?? [];
+        $this->pendingItems  = $data['items'] ?? [];
         $this->pendingTotals = $data['order_totals'] ?? [];
 
-        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses'], $data['order_totals']);
+        // Remove all billing_* and shipping_* flat keys, plus other non-Order-column keys
+        foreach (array_keys($data) as $key) {
+            if (str_starts_with($key, 'billing_') || str_starts_with($key, 'shipping_')) {
+                unset($data[$key]);
+            }
+        }
+
+        unset($data['same_as_billing'], $data['items'], $data['order_totals']);
 
         return $data;
     }

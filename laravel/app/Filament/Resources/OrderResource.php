@@ -100,7 +100,21 @@ class OrderResource extends Resource
                             ->relationship('customer', 'id')
                             ->getOptionLabelFromRecordUsing(fn (Customer $record): string => $record->first_name.' '.$record->last_name)
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                if ($state === null) {
+                                    return;
+                                }
+                                $customer = Customer::find($state);
+                                if ($customer === null) {
+                                    return;
+                                }
+                                $set('firstname', $customer->first_name);
+                                $set('lastname', $customer->last_name);
+                                $set('email', $customer->email);
+                                $set('telephone', $customer->phone);
+                            }),
 
                         Forms\Components\Select::make('status')
                             ->label('Status')
@@ -136,6 +150,26 @@ class OrderResource extends Resource
                             ->options(fn (): array => Language::pluck('name', 'code')->toArray())
                             ->searchable(),
 
+                        Forms\Components\TextInput::make('firstname')
+                            ->label('First Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('lastname')
+                            ->label('Last Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('telephone')
+                            ->label('Telephone')
+                            ->required()
+                            ->maxLength(255),
+
                         Forms\Components\TextInput::make('total_amount')
                             ->label('Total Amount')
                             ->numeric()
@@ -146,92 +180,80 @@ class OrderResource extends Resource
                     ->columns(2),
 
                 Forms\Components\Section::make('Billing Address')
+                    ->columns(2)
                     ->schema([
-                        Forms\Components\Repeater::make('billing_addresses')
+                        Forms\Components\TextInput::make('billing_firstname')
+                            ->label('First Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('billing_lastname')
+                            ->label('Last Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\Toggle::make('billing_business')
+                            ->default(false)
+                            ->live()
+                            ->inline(false),
+
+                        Forms\Components\TextInput::make('billing_company')
+                            ->label('Company')
+                            ->visible(fn (Get $get) => (bool) $get('billing_business'))
+                            ->required(fn (Get $get) => (bool) $get('billing_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('billing_company_id')
+                            ->label('Company ID')
+                            ->visible(fn (Get $get) => (bool) $get('billing_business'))
+                            ->required(fn (Get $get) => (bool) $get('billing_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('billing_tax_id')
+                            ->label('Tax ID')
+                            ->visible(fn (Get $get) => (bool) $get('billing_business'))
+                            ->required(fn (Get $get) => (bool) $get('billing_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\Grid::make(3)
                             ->schema([
-                                Forms\Components\Hidden::make('shipping')
-                                    ->default(0),
-
-                                Forms\Components\TextInput::make('firstname')
-                                    ->label('First Name')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('lastname')
-                                    ->label('Last Name')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                Forms\Components\Toggle::make('business')
-                                    ->default(false)
+                                Forms\Components\Select::make('billing_country_id')
+                                    ->label('Country')
+                                    ->options(fn (): array => Country::pluck('name', 'id')->toArray())
                                     ->live()
-                                    ->inline(false),
+                                    ->searchable(),
 
-                                Forms\Components\TextInput::make('company')
-                                    ->label('Company')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('company_id')
-                                    ->label('Company ID')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('tax_id')
-                                    ->label('Tax ID')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\Grid::make(3)
-                                    ->schema([
-                                        Forms\Components\Select::make('country_id')
-                                            ->label('Country')
-                                            ->options(fn (): array => Country::pluck('name', 'id')->toArray())
-                                            ->live()
-                                            ->searchable(),
-
-                                        Forms\Components\Select::make('zone_id')
-                                            ->label('Zone')
-                                            ->options(fn (Get $get): array => $get('country_id') ? Zone::where('country_id', $get('country_id'))->pluck('name', 'id')->toArray() : [])
-                                            ->live()
-                                            ->nullable()
-                                            ->searchable(),
-
-                                        Forms\Components\Select::make('city_id')
-                                            ->label('City')
-                                            ->options(fn (Get $get): array => $get('zone_id') ? City::where('zone_id', $get('zone_id'))->pluck('name', 'id')->toArray() : [])
-                                            ->nullable()
-                                            ->searchable(),
-                                    ])
-                                    ->columnSpanFull(),
-
-                                Forms\Components\TextInput::make('address_line_1')
-                                    ->label('Address Line 1')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
-
-                                Forms\Components\TextInput::make('address_line_2')
-                                    ->label('Address Line 2')
+                                Forms\Components\Select::make('billing_zone_id')
+                                    ->label('Zone')
+                                    ->options(fn (Get $get): array => $get('billing_country_id') ? Zone::where('country_id', $get('billing_country_id'))->pluck('name', 'id')->toArray() : [])
+                                    ->live()
                                     ->nullable()
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
+                                    ->searchable(),
 
-                                Forms\Components\TextInput::make('postcode')
-                                    ->label('Postcode')
-                                    ->required()
-                                    ->maxLength(255),
+                                Forms\Components\Select::make('billing_city_id')
+                                    ->label('City')
+                                    ->options(fn (Get $get): array => $get('billing_zone_id') ? City::where('zone_id', $get('billing_zone_id'))->pluck('name', 'id')->toArray() : [])
+                                    ->nullable()
+                                    ->searchable(),
                             ])
-                            ->columns(2)
-                            ->minItems(1)
-                            ->maxItems(1)
-                            ->addable(false)
-                            ->deletable(false)
-                            ->collapsible()
-                            ->defaultItems(1),
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('billing_address_line_1')
+                            ->label('Address Line 1')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('billing_address_line_2')
+                            ->label('Address Line 2')
+                            ->nullable()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('billing_postcode')
+                            ->label('Postcode')
+                            ->required()
+                            ->maxLength(255),
                     ]),
 
                 Forms\Components\Toggle::make('same_as_billing')
@@ -242,92 +264,80 @@ class OrderResource extends Resource
 
                 Forms\Components\Section::make('Shipping Address')
                     ->visible(fn (Get $get) => ! $get('same_as_billing'))
+                    ->columns(2)
                     ->schema([
-                        Forms\Components\Repeater::make('shipping_addresses')
+                        Forms\Components\TextInput::make('shipping_firstname')
+                            ->label('First Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('shipping_lastname')
+                            ->label('Last Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\Toggle::make('shipping_business')
+                            ->default(false)
+                            ->live()
+                            ->inline(false),
+
+                        Forms\Components\TextInput::make('shipping_company')
+                            ->label('Company')
+                            ->visible(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->required(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('shipping_company_id')
+                            ->label('Company ID')
+                            ->visible(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->required(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('shipping_tax_id')
+                            ->label('Tax ID')
+                            ->visible(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->required(fn (Get $get) => (bool) $get('shipping_business'))
+                            ->maxLength(255),
+
+                        Forms\Components\Grid::make(3)
                             ->schema([
-                                Forms\Components\Hidden::make('shipping')
-                                    ->default(1),
-
-                                Forms\Components\TextInput::make('firstname')
-                                    ->label('First Name')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('lastname')
-                                    ->label('Last Name')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                Forms\Components\Toggle::make('business')
-                                    ->default(false)
+                                Forms\Components\Select::make('shipping_country_id')
+                                    ->label('Country')
+                                    ->options(fn (): array => Country::pluck('name', 'id')->toArray())
                                     ->live()
-                                    ->inline(false),
+                                    ->searchable(),
 
-                                Forms\Components\TextInput::make('company')
-                                    ->label('Company')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('company_id')
-                                    ->label('Company ID')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\TextInput::make('tax_id')
-                                    ->label('Tax ID')
-                                    ->visible(fn (Get $get) => (bool) $get('business'))
-                                    ->required(fn (Get $get) => (bool) $get('business'))
-                                    ->maxLength(255),
-
-                                Forms\Components\Grid::make(3)
-                                    ->schema([
-                                        Forms\Components\Select::make('country_id')
-                                            ->label('Country')
-                                            ->options(fn (): array => Country::pluck('name', 'id')->toArray())
-                                            ->live()
-                                            ->searchable(),
-
-                                        Forms\Components\Select::make('zone_id')
-                                            ->label('Zone')
-                                            ->options(fn (Get $get): array => $get('country_id') ? Zone::where('country_id', $get('country_id'))->pluck('name', 'id')->toArray() : [])
-                                            ->live()
-                                            ->nullable()
-                                            ->searchable(),
-
-                                        Forms\Components\Select::make('city_id')
-                                            ->label('City')
-                                            ->options(fn (Get $get): array => $get('zone_id') ? City::where('zone_id', $get('zone_id'))->pluck('name', 'id')->toArray() : [])
-                                            ->nullable()
-                                            ->searchable(),
-                                    ])
-                                    ->columnSpanFull(),
-
-                                Forms\Components\TextInput::make('address_line_1')
-                                    ->label('Address Line 1')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
-
-                                Forms\Components\TextInput::make('address_line_2')
-                                    ->label('Address Line 2')
+                                Forms\Components\Select::make('shipping_zone_id')
+                                    ->label('Zone')
+                                    ->options(fn (Get $get): array => $get('shipping_country_id') ? Zone::where('country_id', $get('shipping_country_id'))->pluck('name', 'id')->toArray() : [])
+                                    ->live()
                                     ->nullable()
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
+                                    ->searchable(),
 
-                                Forms\Components\TextInput::make('postcode')
-                                    ->label('Postcode')
-                                    ->required()
-                                    ->maxLength(255),
+                                Forms\Components\Select::make('shipping_city_id')
+                                    ->label('City')
+                                    ->options(fn (Get $get): array => $get('shipping_zone_id') ? City::where('zone_id', $get('shipping_zone_id'))->pluck('name', 'id')->toArray() : [])
+                                    ->nullable()
+                                    ->searchable(),
                             ])
-                            ->columns(2)
-                            ->maxItems(1)
-                            ->minItems(1)
-                            ->addable(false)
-                            ->deletable(false)
-                            ->collapsible()
-                            ->defaultItems(1),
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('shipping_address_line_1')
+                            ->label('Address Line 1')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('shipping_address_line_2')
+                            ->label('Address Line 2')
+                            ->nullable()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('shipping_postcode')
+                            ->label('Postcode')
+                            ->required()
+                            ->maxLength(255),
                     ]),
 
                 Forms\Components\Section::make('Order Items')

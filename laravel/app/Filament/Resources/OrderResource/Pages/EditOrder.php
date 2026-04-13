@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\OrderResource\Pages;
 
-use App\Domains\Order\Models\OrderAddress;
 use App\Domains\Order\Models\OrderItem;
 use App\Domains\Order\Models\OrderTotal;
 use App\Filament\Resources\OrderResource;
@@ -52,25 +51,17 @@ class EditOrder extends EditRecord
             'address_line_1',
             'address_line_2',
             'postcode',
-            'shipping',
         ];
 
-        $data['billing_addresses'] = $this->record->addresses
-            ->where('shipping', 0)
-            ->map(fn (OrderAddress $address) => $address->only($addressFields))
-            ->values()
-            ->toArray();
+        $billing = $this->record->addresses->firstWhere('shipping', 0);
+        $shipping = $this->record->addresses->firstWhere('shipping', 1);
 
-        $data['shipping_addresses'] = $this->record->addresses
-            ->where('shipping', 1)
-            ->map(fn (OrderAddress $address) => $address->only($addressFields))
-            ->values()
-            ->toArray();
+        foreach ($addressFields as $field) {
+            $data['billing_'.$field] = $billing ? $billing->$field : null;
+            $data['shipping_'.$field] = $shipping ? $shipping->$field : null;
+        }
 
-        $data['same_as_billing'] = $this->detectSameAsBilling(
-            $data['billing_addresses'][0] ?? [],
-            $data['shipping_addresses'][0] ?? []
-        );
+        $data['same_as_billing'] = $this->detectSameAsBilling($data);
 
         $data['order_totals'] = $this->record->totals
             ->where('code', '!=', 'total')
@@ -82,12 +73,8 @@ class EditOrder extends EditRecord
         return $data;
     }
 
-    private function detectSameAsBilling(array $billing, array $shipping): bool
+    private function detectSameAsBilling(array $data): bool
     {
-        if (empty($billing) || empty($shipping)) {
-            return false;
-        }
-
         $compareFields = [
             'firstname',
             'lastname',
@@ -104,7 +91,7 @@ class EditOrder extends EditRecord
         ];
 
         foreach ($compareFields as $field) {
-            if (($billing[$field] ?? null) != ($shipping[$field] ?? null)) {
+            if (($data['billing_'.$field] ?? null) != ($data['shipping_'.$field] ?? null)) {
                 return false;
             }
         }
@@ -119,38 +106,58 @@ class EditOrder extends EditRecord
         $sameAsBilling = (bool) ($data['same_as_billing'] ?? false);
 
         $this->pendingItems = $data['items'] ?? [];
-        $this->pendingBillingAddresses = $data['billing_addresses'] ?? [];
-        $this->pendingShippingAddresses = $data['shipping_addresses'] ?? [];
         $this->pendingTotals = $data['order_totals'] ?? [];
 
-        if ($sameAsBilling && ! empty($this->pendingBillingAddresses[0])) {
-            $copyFields = [
-                'firstname',
-                'lastname',
-                'business',
-                'company',
-                'company_id',
-                'tax_id',
-                'country_id',
-                'zone_id',
-                'city_id',
-                'address_line_1',
-                'address_line_2',
-                'postcode',
-            ];
+        $this->pendingBillingAddresses = [[
+            'firstname' => $data['billing_firstname'] ?? null,
+            'lastname' => $data['billing_lastname'] ?? null,
+            'business' => $data['billing_business'] ?? false,
+            'company' => $data['billing_company'] ?? null,
+            'company_id' => $data['billing_company_id'] ?? null,
+            'tax_id' => $data['billing_tax_id'] ?? null,
+            'country_id' => $data['billing_country_id'] ?? null,
+            'zone_id' => $data['billing_zone_id'] ?? null,
+            'city_id' => $data['billing_city_id'] ?? null,
+            'address_line_1' => $data['billing_address_line_1'] ?? null,
+            'address_line_2' => $data['billing_address_line_2'] ?? null,
+            'postcode' => $data['billing_postcode'] ?? null,
+            'shipping' => 0,
+        ]];
 
-            $shippingBase = $this->pendingShippingAddresses[0] ?? [];
-
-            foreach ($copyFields as $field) {
-                $shippingBase[$field] = $this->pendingBillingAddresses[0][$field] ?? null;
-            }
-
-            $shippingBase['shipping'] = 1;
-
-            $this->pendingShippingAddresses[0] = $shippingBase;
+        if ($sameAsBilling) {
+            $shippingEntry = $this->pendingBillingAddresses[0];
+            $shippingEntry['shipping'] = 1;
+            $this->pendingShippingAddresses = [$shippingEntry];
+        } else {
+            $this->pendingShippingAddresses = [[
+                'firstname' => $data['shipping_firstname'] ?? null,
+                'lastname' => $data['shipping_lastname'] ?? null,
+                'business' => $data['shipping_business'] ?? false,
+                'company' => $data['shipping_company'] ?? null,
+                'company_id' => $data['shipping_company_id'] ?? null,
+                'tax_id' => $data['shipping_tax_id'] ?? null,
+                'country_id' => $data['shipping_country_id'] ?? null,
+                'zone_id' => $data['shipping_zone_id'] ?? null,
+                'city_id' => $data['shipping_city_id'] ?? null,
+                'address_line_1' => $data['shipping_address_line_1'] ?? null,
+                'address_line_2' => $data['shipping_address_line_2'] ?? null,
+                'postcode' => $data['shipping_postcode'] ?? null,
+                'shipping' => 1,
+            ]];
         }
 
-        unset($data['items'], $data['billing_addresses'], $data['shipping_addresses'], $data['same_as_billing'], $data['order_totals']);
+        // Remove address keys and other non-model keys from $data before save
+        $prefixes = ['billing_', 'shipping_'];
+        foreach (array_keys($data) as $key) {
+            foreach ($prefixes as $prefix) {
+                if (str_starts_with($key, $prefix)) {
+                    unset($data[$key]);
+                    break;
+                }
+            }
+        }
+
+        unset($data['same_as_billing'], $data['items'], $data['order_totals']);
 
         return $data;
     }
